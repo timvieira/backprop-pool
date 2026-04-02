@@ -531,7 +531,8 @@ function updateDisplays() {
 }
 
 function adjustAngle(delta) {
-  angleInput.value = ((parseFloat(angleInput.value) || 0) + delta).toFixed(1);
+  angleInput.value = (((parseFloat(angleInput.value) || 0) + delta) % 360 + 360) % 360;
+  angleInput.value = parseFloat(angleInput.value).toFixed(1);
   updateDisplays();
 }
 
@@ -1425,7 +1426,8 @@ function applyGradient() {
   const newAngle = lastResult.angleDeg - lr * lastResult.grad_angle;
   const newForce = clampForce(lastResult.force - lr * lastResult.grad_force);
 
-  angleInput.value = newAngle.toFixed(1);
+  angleInput.value = ((newAngle % 360) + 360) % 360;
+  angleInput.value = parseFloat(angleInput.value).toFixed(1);
   forceInput.value = newForce.toFixed(1);
   updateDisplays();
 }
@@ -1444,7 +1446,8 @@ function applyGradientWithLineSearch() {
   const newAngle = lastResult.angleDeg - alpha * lastResult.grad_angle;
   const newForce = clampForce(lastResult.force - alpha * lastResult.grad_force);
 
-  angleInput.value = newAngle.toFixed(1);
+  angleInput.value = ((newAngle % 360) + 360) % 360;
+  angleInput.value = parseFloat(angleInput.value).toFixed(1);
   forceInput.value = newForce.toFixed(1);
   updateDisplays();
 }
