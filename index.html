@@ -580,6 +580,7 @@ let history = [];
 let animating = false;
 let autoGDRunning = false;
 let autoGDTimer = null;
+let prevAutoLoss = Infinity;
 let animFrame = 0;
 let animPositions = [];
 
@@ -1304,6 +1305,7 @@ function toggleAutoGD() {
   if (holeComplete || animating) return;
 
   autoGDRunning = true;
+  prevAutoLoss = Infinity;
   autoBtn.textContent = 'Stop';
   autoBtn.classList.add('running');
   autoGDStep();
@@ -1325,7 +1327,26 @@ function autoGDStep() {
       stopAutoGD();
       return;
     }
-    // Small delay so the UI updates and user can see progress
+
+    // Stopping criteria
+    const loss = lastResult ? evalLoss(lastResult.angleDeg, lastResult.force) : Infinity;
+    const gradNormSq = lastResult ?
+      lastResult.grad_angle ** 2 + lastResult.grad_force ** 2 : Infinity;
+    const relImprovement = prevAutoLoss > 0 ?
+      (prevAutoLoss - loss) / prevAutoLoss : 0;
+
+    if (gradNormSq < 1e-8) {
+      showMessage('Converged (gradient ~ 0)', '#2e7d32');
+      stopAutoGD();
+      return;
+    }
+    if (loss > 0 && relImprovement < 1e-8 && prevAutoLoss < Infinity) {
+      showMessage('Converged (no progress)', '#e65100');
+      stopAutoGD();
+      return;
+    }
+
+    prevAutoLoss = loss;
     autoGDTimer = setTimeout(autoGDStep, 50);
   });
 }
