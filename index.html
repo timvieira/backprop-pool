@@ -144,9 +144,9 @@ button:disabled:hover {
   color: #333;
 }
 #auto-btn.running {
-  background: #c62828;
+  background: #888;
   color: #fff;
-  border-color: #c62828;
+  border-color: #888;
   animation: pulse 1s infinite;
 }
 @keyframes pulse {
@@ -798,10 +798,10 @@ function numericalGradient(angleDeg, force, courseIdx, eps = 1e-4) {
 function drawCourse(courseIdx) {
   const course = courses[courseIdx];
 
-  // Background grass
-  ctx.fillStyle = '#2e7d32';
+  // Background
+  ctx.fillStyle = '#c0ccb8';
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#2b7230';
+  ctx.fillStyle = '#b8c4b0';
   for (let x = 0; x < W; x += 20) {
     for (let y = 0; y < H; y += 20) {
       if ((x + y) % 40 === 0) ctx.fillRect(x, y, 20, 20);
@@ -812,37 +812,37 @@ function drawCourse(courseIdx) {
   for (const s of (course.sandTraps || [])) {
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#e8c86a';
+    ctx.fillStyle = '#d8cba4';
     ctx.fill();
-    ctx.strokeStyle = '#d4a84a';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#c4b890';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
 
   // Walls
   for (const w of (course.walls || [])) {
-    ctx.fillStyle = '#5d4037';
+    ctx.fillStyle = '#6b6b6b';
     ctx.fillRect(w.x, w.y, w.w, w.h);
-    ctx.fillStyle = '#6d4c41';
+    ctx.fillStyle = '#787878';
     ctx.fillRect(w.x + 2, w.y + 2, w.w - 4, w.h - 4);
   }
 
   // Obstacles
   for (const o of (course.obstacles || [])) {
-    ctx.fillStyle = '#795548';
+    ctx.fillStyle = '#808080';
     ctx.fillRect(o.x, o.y, o.w, o.h);
-    ctx.fillStyle = '#8d6e63';
+    ctx.fillStyle = '#8e8e8e';
     ctx.fillRect(o.x + 2, o.y + 2, o.w - 4, o.h - 4);
   }
 
   // Hole
   ctx.beginPath();
   ctx.arc(course.hole.x, course.hole.y, HOLE_R + 4, 0, Math.PI * 2);
-  ctx.fillStyle = '#66bb6a';
+  ctx.fillStyle = '#a8b8a0';
   ctx.fill();
   ctx.beginPath();
   ctx.arc(course.hole.x, course.hole.y, HOLE_R, 0, Math.PI * 2);
-  ctx.fillStyle = '#111';
+  ctx.fillStyle = '#333';
   ctx.fill();
 
   // Flag
@@ -850,14 +850,14 @@ function drawCourse(courseIdx) {
     ctx.beginPath();
     ctx.moveTo(course.hole.x, course.hole.y - 4);
     ctx.lineTo(course.hole.x, course.hole.y - 40);
-    ctx.strokeStyle = '#555';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(course.hole.x, course.hole.y - 40);
-    ctx.lineTo(course.hole.x + 20, course.hole.y - 33);
+    ctx.lineTo(course.hole.x + 16, course.hole.y - 33);
     ctx.lineTo(course.hole.x, course.hole.y - 26);
-    ctx.fillStyle = '#c62828';
+    ctx.fillStyle = '#0181eb';
     ctx.fill();
   }
 }
@@ -867,17 +867,17 @@ function drawBallAt(x, y, alpha = 1) {
   // Shadow
   ctx.beginPath();
   ctx.arc(x + 2, y + 2, BALL_R, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
   ctx.fill();
   // Ball
   const grad = ctx.createRadialGradient(x - 2, y - 2, 1, x, y, BALL_R);
-  grad.addColorStop(0, '#ffffff');
-  grad.addColorStop(1, '#cccccc');
+  grad.addColorStop(0, '#fff');
+  grad.addColorStop(1, '#d8d8d8');
   ctx.beginPath();
   ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
   ctx.fillStyle = grad;
   ctx.fill();
-  ctx.strokeStyle = '#aaa';
+  ctx.strokeStyle = '#999';
   ctx.lineWidth = 0.5;
   ctx.stroke();
   ctx.globalAlpha = 1;
@@ -945,7 +945,7 @@ function drawLossLine(fx, fy, hx, hy) {
   ctx.setLineDash([4, 4]);
   ctx.moveTo(fx, fy);
   ctx.lineTo(hx, hy);
-  ctx.strokeStyle = 'rgba(198,40,40,0.6)';
+  ctx.strokeStyle = 'rgba(120,60,60,0.5)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
@@ -954,8 +954,8 @@ function drawLossLine(fx, fy, hx, hy) {
   const dist = Math.sqrt((fx - hx) ** 2 + (fy - hy) ** 2);
   const mx = (fx + hx) / 2;
   const my = (fy + hy) / 2;
-  ctx.fillStyle = '#c62828';
-  ctx.font = 'bold 12px Menlo, Monaco, monospace';
+  ctx.fillStyle = '#885050';
+  ctx.font = '12px Menlo, Monaco, monospace';
   ctx.fillText(`${dist.toFixed(1)}px`, mx + 6, my - 6);
 }
 
