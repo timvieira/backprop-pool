@@ -83,6 +83,8 @@ h1 {
   border-radius: 3px;
   font-size: 11px;
   line-height: 1.5;
+  display: flex;
+  align-items: center;
 }
 #hud-info span { color: #333; font-weight: 700; }
 
@@ -415,6 +417,8 @@ a:hover { color: #555; }
     <div class="hud" id="hud-info">
       Hole <span id="hole-num">1</span>/<span id="hole-total">6</span>
       &middot; Iter <span id="iter-num">0</span>
+      <button class="hud-pm" id="fs-btn" title="f — Fullscreen" style="margin-left:6px;">&#x26F6;</button>
+      <button class="hud-pm" id="help-btn" title="?">?</button>
     </div>
 
     <!-- HUD: top-right results + loss plot -->
@@ -457,8 +461,6 @@ a:hover { color: #555; }
       <button class="hud-btn" id="reset-btn" title="r">Reset</button>
       <button class="hud-btn" id="next-btn" style="display:none" title="n">Next</button>
       <button class="hud-btn" id="adj-btn" title="a — Cycle derivatives (adjoints / tangents)">Deriv</button>
-      <button class="hud-btn" id="fs-btn" title="f — Fullscreen">&#x26F6;</button>
-      <button class="hud-btn" id="help-btn" title="?">?</button>
     </div>
   </div>
 
@@ -1841,6 +1843,29 @@ document.addEventListener('fullscreenchange', () => {
   canvas.width = W;
   canvas.height = H;
 });
+
+// Auto-prompt fullscreen on landscape mobile
+if ('ontouchstart' in window) {
+  const landscapePrompt = document.createElement('div');
+  landscapePrompt.id = 'landscape-prompt';
+  landscapePrompt.textContent = 'Tap for fullscreen';
+  landscapePrompt.style.cssText = 'display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;padding:8px 20px;border-radius:20px;font-size:14px;z-index:300;cursor:pointer;font-family:inherit;';
+  document.body.appendChild(landscapePrompt);
+  landscapePrompt.addEventListener('click', () => {
+    document.getElementById('canvas-wrap').requestFullscreen();
+    landscapePrompt.style.display = 'none';
+  });
+  function checkOrientation() {
+    if (window.innerWidth > window.innerHeight && !document.fullscreenElement) {
+      landscapePrompt.style.display = 'block';
+    } else {
+      landscapePrompt.style.display = 'none';
+    }
+  }
+  window.addEventListener('resize', checkOrientation);
+  screen.orientation && screen.orientation.addEventListener('change', checkOrientation);
+  checkOrientation();
+}
 
 const adjBtn = document.getElementById('adj-btn');
 const derivModes = ['off', 'adj:pos', 'adj:vel', 'tan:angle', 'tan:force'];
