@@ -39,12 +39,133 @@ h1 {
   font-style: italic;
   margin-bottom: 4px;
 }
+
+/* === Canvas container with HUD overlays === */
+#canvas-wrap {
+  position: relative;
+  width: 800px;
+  max-width: 100%;
+}
 canvas {
+  display: block;
   border: 1px solid #ddd;
   border-radius: 4px;
-  max-width: 100%;
+  width: 100%;
   height: auto;
 }
+.hud {
+  position: absolute;
+  pointer-events: none;
+  font-family: Menlo, Monaco, "Andale Mono", monospace;
+  font-size: 11px;
+  color: #444;
+}
+.hud > * { pointer-events: auto; }
+
+/* Top-left: hole info */
+#hud-info {
+  top: 8px; left: 8px;
+  background: rgba(255,255,255,0.75);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+#hud-info span { color: #333; font-weight: 700; }
+
+/* Top-right: results */
+#hud-results {
+  top: 8px; right: 8px;
+  background: rgba(255,255,255,0.75);
+  padding: 6px 10px;
+  border-radius: 3px;
+  text-align: right;
+  display: none;
+  line-height: 1.6;
+}
+#hud-results .hud-label { color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+#hud-results .hud-val { font-weight: 700; }
+.hud-loss { color: #996060; }
+.hud-dist { color: #887050; }
+.hud-grad { color: #506888; }
+.hud-good { color: #607860; }
+
+/* Bottom: parameter controls */
+#hud-controls {
+  bottom: 8px; left: 8px; right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.8);
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+.hud-param {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.hud-param-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-right: 2px;
+}
+.hud-param-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  min-width: 50px;
+  text-align: center;
+}
+.hud-pm {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.9);
+  color: #555;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: Menlo, Monaco, monospace;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.hud-pm:hover { background: #eee; }
+.hud-pm:active { background: #ddd; }
+.hud-sep {
+  width: 1px;
+  height: 20px;
+  background: #ccc;
+  margin: 0 4px;
+}
+.hud-btn {
+  padding: 4px 12px;
+  min-height: 26px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.9);
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Menlo, Monaco, monospace;
+  cursor: pointer;
+}
+.hud-btn:hover { background: #eee; }
+.hud-btn:active { background: #ddd; }
+.hud-btn.primary { background: #555; color: #f8f8f8; border-color: #555; }
+.hud-btn.primary:hover { background: #444; }
+.hud-btn:disabled { opacity: 0.35; cursor: default; }
+.hud-btn:disabled:hover { background: rgba(255,255,255,0.9); }
+
+/* === Below-canvas controls === */
 #controls {
   width: 800px;
   max-width: 100%;
@@ -83,10 +204,6 @@ canvas {
   outline: none;
   border-color: #888;
 }
-.unit {
-  font-size: 0.85em;
-  color: #888;
-}
 button {
   padding: 8px 16px;
   border-radius: 3px;
@@ -100,65 +217,17 @@ button {
   background: #f8f8f8;
   color: #333;
 }
-button:hover {
-  background: #ebebeb;
-  border-color: #aaa;
-}
-button:active {
-  background: #ddd;
-}
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-button:disabled:hover {
-  background: #f8f8f8;
-  border-color: #ccc;
-}
-#shoot-btn {
-  background: #555;
-  color: #f8f8f8;
-  border-color: #555;
-  padding: 8px 24px;
-  font-size: 1em;
-}
-#shoot-btn:hover {
-  background: #444;
-  border-color: #444;
-}
-#apply-btn {
-  background: #f8f8f8;
-  color: #333;
-}
-#next-btn {
-  background: #555;
-  color: #f8f8f8;
-  border-color: #555;
-  display: none;
-}
-#next-btn:hover {
-  background: #444;
-}
-#auto-btn {
-  background: #f8f8f8;
-  color: #333;
-}
+button:hover { background: #ebebeb; border-color: #aaa; }
+button:active { background: #ddd; }
+button:disabled { opacity: 0.4; cursor: default; }
+button:disabled:hover { background: #f8f8f8; border-color: #ccc; }
 #auto-btn.running {
-  background: #777;
-  color: #fff;
-  border-color: #777;
+  background: #777; color: #fff; border-color: #777;
   animation: pulse 1s infinite;
 }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
-}
-#fs-btn {
-  background: #f8f8f8;
-  color: #888;
-  font-size: 16px;
-  min-width: 44px;
-  padding: 8px;
 }
 #verify-btn {
   background: #f8f8f8;
@@ -166,26 +235,6 @@ button:disabled:hover {
   font-size: 0.8em;
   padding: 4px 10px;
   min-height: auto;
-}
-.info-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.info-pill {
-  background: #f8f8f8;
-  border: 1px solid #e0e0e0;
-  border-radius: 3px;
-  padding: 5px 12px;
-  font-size: 0.85em;
-  font-weight: 600;
-  color: #666;
-}
-.info-pill span {
-  color: #333;
 }
 #results-panel {
   background: #f8f8f8;
@@ -200,135 +249,74 @@ button:disabled:hover {
   grid-template-columns: 1fr 1fr;
   gap: 8px 20px;
 }
-.result-item {
-  font-size: 0.9em;
-}
+.result-item { font-size: 0.9em; }
 .result-label {
-  color: #888;
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-family: Menlo, Monaco, monospace;
+  color: #888; font-size: 0.75em; text-transform: uppercase;
+  letter-spacing: 0.5px; font-family: Menlo, Monaco, monospace;
 }
 .result-value {
   font-family: Menlo, Monaco, "Andale Mono", "Courier New", monospace;
-  font-size: 0.95em;
-  font-weight: 600;
+  font-size: 0.95em; font-weight: 600;
 }
 .result-value.loss { color: #996060; }
 .result-value.dist { color: #887050; }
 .result-value.grad { color: #506888; }
 .result-value.good { color: #607860; }
 #verify-panel {
-  display: none;
-  font-size: 0.8em;
-  color: #666;
-  margin-top: 8px;
+  display: none; font-size: 0.8em; color: #666; margin-top: 8px;
   font-family: Menlo, Monaco, "Andale Mono", "Courier New", monospace;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  padding: 8px 12px;
-  border-radius: 3px;
+  background: #fff; border: 1px solid #e0e0e0; padding: 8px 12px; border-radius: 3px;
 }
 #history {
-  display: none;
-  width: 100%;
-  max-height: 120px;
-  overflow-y: auto;
-  font-size: 0.8em;
-  font-family: Menlo, Monaco, "Andale Mono", "Courier New", monospace;
-  color: #666;
-  background: #f8f8f8;
-  border: 1px solid #e0e0e0;
-  border-radius: 3px;
-  padding: 8px 12px;
+  display: none; width: 100%; max-height: 120px; overflow-y: auto;
+  font-size: 0.8em; font-family: Menlo, Monaco, "Andale Mono", "Courier New", monospace;
+  color: #666; background: #f8f8f8; border: 1px solid #e0e0e0;
+  border-radius: 3px; padding: 8px 12px;
 }
 #history div { padding: 1px 0; }
 #history .latest { color: #333; font-weight: 600; }
 #message {
-  position: fixed;
-  top: 50%;
-  left: 50%;
+  position: fixed; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 48px;
-  font-weight: 800;
-  text-align: center;
-  pointer-events: none;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  color: #222;
-  opacity: 0;
-  transition: opacity 0.3s;
-  z-index: 100;
+  font-size: 48px; font-weight: 800; text-align: center;
+  pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: #222; opacity: 0; transition: opacity 0.3s; z-index: 100;
 }
 #start-screen {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(6px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 200;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; z-index: 200;
 }
-#start-screen h1 {
-  font-size: 2.6em;
-  margin-bottom: 8px;
-}
-#start-screen .subtitle {
-  margin-bottom: 20px;
-  font-size: 1.1em;
-}
+#start-screen h1 { font-size: 2.6em; margin-bottom: 8px; }
+#start-screen .subtitle { margin-bottom: 20px; font-size: 1.1em; }
 #start-screen .desc {
-  max-width: 500px;
-  text-align: center;
-  color: #666;
-  font-size: 1em;
-  line-height: 1.6;
-  margin-bottom: 30px;
+  max-width: 500px; text-align: center; color: #666;
+  font-size: 1em; line-height: 1.6; margin-bottom: 30px;
 }
 #start-screen button {
-  background: #555;
-  color: #f8f8f8;
-  border-color: #555;
-  font-size: 1.2em;
-  padding: 12px 50px;
-  border-radius: 4px;
+  background: #555; color: #f8f8f8; border-color: #555;
+  font-size: 1.2em; padding: 12px 50px; border-radius: 4px;
 }
-#start-screen button:hover {
-  background: #444;
-}
-a {
-  color: inherit;
-  text-decoration: underline;
-  transition: color 0.3s;
-}
-a:hover {
-  color: #555;
-}
+#start-screen button:hover { background: #444; }
+a { color: inherit; text-decoration: underline; transition: color 0.3s; }
+a:hover { color: #555; }
 @media (max-width: 600px) {
   body { padding: 8px; }
   h1 { font-size: 1.6em; }
   .subtitle { font-size: 0.85em; }
+  #hud-controls { gap: 3px; padding: 4px 6px; }
+  .hud-param-val { font-size: 11px; min-width: 40px; }
+  .hud-pm { width: 28px; height: 28px; min-height: 28px; font-size: 16px; }
+  .hud-btn { font-size: 10px; padding: 4px 8px; }
+  #hud-info { font-size: 10px; }
+  #hud-results { font-size: 10px; }
   #controls { gap: 8px; }
   .control-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   }
   .control-group { min-width: 0; }
   .control-group input[type="number"] { width: 100%; min-width: 0; }
-  #shoot-btn, #apply-btn, #auto-btn, #reset-btn, #next-btn {
-    grid-column: 1 / -1;
-    width: 100%;
-    font-size: 1em;
-    padding: 12px;
-  }
-  .info-bar { justify-content: center; gap: 6px; }
-  .info-pill { font-size: 0.75em; padding: 4px 8px; }
-  .results-grid { gap: 6px 12px; }
-  .result-value { font-size: 0.85em; }
-  .result-label { font-size: 0.7em; }
   #history { font-size: 0.75em; max-height: 80px; }
   #message { font-size: 32px; }
   #start-screen h1 { font-size: 2em; }
@@ -343,57 +331,62 @@ a:hover {
   <h1>Backprop Golf</h1>
   <p class="subtitle">Learn gradient descent by optimizing your golf shot</p>
 
-  <canvas id="canvas" width="800" height="560"></canvas>
+  <div id="canvas-wrap">
+    <canvas id="canvas" width="800" height="560"></canvas>
 
-  <div id="controls">
-    <div class="info-bar">
-      <div class="info-pill">Hole <span id="hole-num">1</span> / <span id="hole-total">6</span> &nbsp; Par <span id="par-num">3</span></div>
-      <div class="info-pill">Iteration: <span id="iter-num">0</span></div>
-      <div class="info-pill">Total steps: <span id="total-steps">0</span></div>
+    <!-- HUD: top-left info -->
+    <div class="hud" id="hud-info">
+      Hole <span id="hole-num">1</span>/<span id="hole-total">6</span>
+      &middot; Iter <span id="iter-num">0</span>
     </div>
 
+    <!-- HUD: top-right results -->
+    <div class="hud" id="hud-results">
+      <div><span class="hud-label">loss</span> <span class="hud-val hud-loss" id="loss-val">--</span></div>
+      <div><span class="hud-label">dist</span> <span class="hud-val hud-dist" id="dist-val">--</span></div>
+      <div><span class="hud-label">dL/d&theta;</span> <span class="hud-val hud-grad" id="grad-angle-val">--</span></div>
+      <div><span class="hud-label">dL/dF</span> <span class="hud-val hud-grad" id="grad-force-val">--</span></div>
+    </div>
+
+    <!-- HUD: bottom controls -->
+    <div class="hud" id="hud-controls">
+      <div class="hud-param">
+        <span class="hud-param-label">&theta;</span>
+        <button class="hud-pm" id="angle-down">&minus;</button>
+        <span class="hud-param-val" id="angle-display">0.0&deg;</span>
+        <button class="hud-pm" id="angle-up">+</button>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-param">
+        <span class="hud-param-label">F</span>
+        <button class="hud-pm" id="force-down">&minus;</button>
+        <span class="hud-param-val" id="force-display">8.0</span>
+        <button class="hud-pm" id="force-up">+</button>
+      </div>
+      <div class="hud-sep"></div>
+      <button class="hud-btn primary" id="shoot-btn">Shoot</button>
+      <button class="hud-btn" id="apply-btn">Grad</button>
+      <button class="hud-btn" id="auto-btn">Auto</button>
+      <button class="hud-btn" id="reset-btn">Reset</button>
+      <button class="hud-btn" id="next-btn" style="display:none">Next</button>
+      <button class="hud-btn" id="fs-btn" title="Fullscreen">&#x26F6;</button>
+    </div>
+  </div>
+
+  <!-- Hidden inputs that store the actual values -->
+  <input type="hidden" id="angle-input" value="0">
+  <input type="hidden" id="force-input" value="8">
+
+  <div id="controls">
     <div class="control-row">
-      <div class="control-group">
-        <label>Angle:</label>
-        <input type="number" id="angle-input" step="0.1" value="0">
-        <span class="unit">deg</span>
-      </div>
-      <div class="control-group">
-        <label>Force:</label>
-        <input type="number" id="force-input" step="0.1" min="0.5" max="18" value="8">
-      </div>
-      <button id="shoot-btn">Shoot!</button>
       <div class="control-group">
         <label>LR:</label>
         <input type="number" id="lr-input" step="0.0001" min="0" value="0.001">
       </div>
-      <button id="apply-btn">Apply Gradient</button>
-      <button id="auto-btn">Auto GD</button>
-      <button id="reset-btn">Reset</button>
-      <button id="next-btn">Next Hole</button>
-      <button id="fs-btn" title="Fullscreen">&#x26F6;</button>
     </div>
 
     <div id="results-panel">
-      <div class="results-grid">
-        <div class="result-item">
-          <div class="result-label">Loss (dist&sup2;)</div>
-          <div class="result-value loss" id="loss-val">--</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">Distance to hole</div>
-          <div class="result-value dist" id="dist-val">--</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">dL/d(angle)</div>
-          <div class="result-value grad" id="grad-angle-val">--</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">dL/d(force)</div>
-          <div class="result-value grad" id="grad-force-val">--</div>
-        </div>
-      </div>
-      <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button id="verify-btn">Verify with finite differences</button>
         <span id="verify-status" style="font-size: 12px; color: #888;"></span>
         <a href="https://timvieira.github.io/blog/post/2017/04/21/how-to-test-gradient-implementations/" target="_blank" rel="noopener" style="font-size: 0.8em;">How to test gradient implementations</a>
@@ -427,11 +420,11 @@ const W = 800, H = 560;
 // UI elements
 const holeNumEl = document.getElementById('hole-num');
 const holeTotalEl = document.getElementById('hole-total');
-const parNumEl = document.getElementById('par-num');
 const iterNumEl = document.getElementById('iter-num');
-const totalStepsEl = document.getElementById('total-steps');
 const angleInput = document.getElementById('angle-input');
 const forceInput = document.getElementById('force-input');
+const angleDisplay = document.getElementById('angle-display');
+const forceDisplay = document.getElementById('force-display');
 const lrInput = document.getElementById('lr-input');
 const shootBtn = document.getElementById('shoot-btn');
 const applyBtn = document.getElementById('apply-btn');
@@ -440,6 +433,7 @@ const resetBtn = document.getElementById('reset-btn');
 const nextBtn = document.getElementById('next-btn');
 const verifyBtn = document.getElementById('verify-btn');
 const resultsPanel = document.getElementById('results-panel');
+const hudResults = document.getElementById('hud-results');
 const lossVal = document.getElementById('loss-val');
 const distVal = document.getElementById('dist-val');
 const gradAngleVal = document.getElementById('grad-angle-val');
@@ -450,12 +444,34 @@ const historyEl = document.getElementById('history');
 const messageEl = document.getElementById('message');
 const startScreen = document.getElementById('start-screen');
 
+// +/- button step sizes
+const ANGLE_STEP = 1; // degrees
+const FORCE_STEP = 0.5;
+
+function updateDisplays() {
+  const a = parseFloat(angleInput.value) || 0;
+  const f = parseFloat(forceInput.value) || 1;
+  angleDisplay.textContent = a.toFixed(1) + '\u00B0';
+  forceDisplay.textContent = f.toFixed(1);
+}
+
+function adjustAngle(delta) {
+  angleInput.value = ((parseFloat(angleInput.value) || 0) + delta).toFixed(1);
+  updateDisplays();
+}
+
+function adjustForce(delta) {
+  const f = Math.max(0.5, Math.min(MAX_POWER, (parseFloat(forceInput.value) || 1) + delta));
+  forceInput.value = f.toFixed(1);
+  updateDisplays();
+}
+
 // Physics constants
 const BALL_R = 8;
 const HOLE_R = 14;
 const FRICTION = 0.985;
 const MIN_SPEED = 0.15;
-const MAX_POWER = 18;
+const MAX_POWER = 25;
 
 // Course definitions
 const courses = [
@@ -1131,7 +1147,6 @@ function loadHole(idx) {
 
   holeNumEl.textContent = idx + 1;
   holeTotalEl.textContent = courses.length;
-  parNumEl.textContent = course.par;
   iterNumEl.textContent = '0';
 
   // Initial guess: direct angle to hole with some offset
@@ -1142,8 +1157,10 @@ function loadHole(idx) {
   const offset = (Math.random() - 0.5) * 60; // +/-30 deg offset
   angleInput.value = (directAngle + offset).toFixed(1);
   forceInput.value = (5 + Math.random() * 6).toFixed(1); // 5-11
+  updateDisplays();
 
   resultsPanel.style.display = 'none';
+  hudResults.style.display = 'none';
   historyEl.style.display = 'none';
   nextBtn.style.display = 'none';
   verifyPanel.style.display = 'none';
@@ -1153,7 +1170,6 @@ function loadHole(idx) {
 function startGame() {
   startScreen.style.display = 'none';
   totalGradSteps = 0;
-  totalStepsEl.textContent = '0';
   loadHole(0);
 }
 
@@ -1163,6 +1179,7 @@ function shoot(onComplete) {
   const angleDeg = parseFloat(angleInput.value);
   const force = Math.max(0.5, Math.min(MAX_POWER, parseFloat(forceInput.value)));
   forceInput.value = force.toFixed(1);
+  updateDisplays();
 
   if (isNaN(angleDeg) || isNaN(force)) return;
 
@@ -1179,7 +1196,6 @@ function shoot(onComplete) {
   iteration++;
   totalGradSteps++;
   iterNumEl.textContent = iteration;
-  totalStepsEl.textContent = totalGradSteps;
 
   lastResult = simResult;
   // Save previous trajectory before overwriting
@@ -1220,13 +1236,14 @@ function showResults(angleDeg, force, bpResult, simResult) {
   const dist = Math.sqrt(bpResult.loss);
 
   resultsPanel.style.display = 'block';
+  hudResults.style.display = 'block';
   historyEl.style.display = 'block';
 
   if (simResult.inHole) {
     lossVal.textContent = '0';
-    lossVal.className = 'result-value good';
-    distVal.textContent = 'IN THE HOLE!';
-    distVal.className = 'result-value good';
+    lossVal.className = 'hud-val hud-good';
+    distVal.textContent = 'IN!';
+    distVal.className = 'hud-val hud-good';
     gradAngleVal.textContent = '0';
     gradForceVal.textContent = '0';
 
@@ -1237,9 +1254,9 @@ function showResults(angleDeg, force, bpResult, simResult) {
     showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#555');
   } else {
     lossVal.textContent = bpResult.loss.toFixed(1);
-    lossVal.className = 'result-value loss';
-    distVal.textContent = dist.toFixed(1) + ' px';
-    distVal.className = 'result-value dist';
+    lossVal.className = 'hud-val hud-loss';
+    distVal.textContent = dist.toFixed(1) + 'px';
+    distVal.className = 'hud-val hud-dist';
     gradAngleVal.textContent = formatGrad(bpResult.grad_angle);
     gradForceVal.textContent = formatGrad(bpResult.grad_force);
   }
@@ -1321,6 +1338,7 @@ function applyGradient() {
 
   angleInput.value = newAngle.toFixed(1);
   forceInput.value = newForce.toFixed(1);
+  updateDisplays();
 }
 
 // Auto apply: uses Armijo line search (a real optimization algorithm)
@@ -1339,6 +1357,7 @@ function applyGradientWithLineSearch() {
 
   angleInput.value = newAngle.toFixed(1);
   forceInput.value = newForce.toFixed(1);
+  updateDisplays();
 }
 
 function verifyGradient() {
@@ -1460,6 +1479,10 @@ shootBtn.addEventListener('click', () => shoot());
 applyBtn.addEventListener('click', () => applyGradient());
 autoBtn.addEventListener('click', toggleAutoGD);
 resetBtn.addEventListener('click', () => loadHole(currentCourse));
+document.getElementById('angle-up').addEventListener('click', () => adjustAngle(ANGLE_STEP));
+document.getElementById('angle-down').addEventListener('click', () => adjustAngle(-ANGLE_STEP));
+document.getElementById('force-up').addEventListener('click', () => adjustForce(FORCE_STEP));
+document.getElementById('force-down').addEventListener('click', () => adjustForce(-FORCE_STEP));
 document.getElementById('fs-btn').addEventListener('click', () => {
   if (document.fullscreenElement) {
     document.exitFullscreen();
@@ -1474,12 +1497,6 @@ nextBtn.addEventListener('click', () => {
 });
 verifyBtn.addEventListener('click', verifyGradient);
 
-// Enter to shoot from inputs
-[angleInput, forceInput].forEach(input => {
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') shoot();
-  });
-});
 
 // Global keyboard shortcuts
 document.addEventListener('keydown', (e) => {
