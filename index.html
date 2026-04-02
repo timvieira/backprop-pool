@@ -59,6 +59,7 @@ canvas {
   font-family: Menlo, Monaco, "Andale Mono", monospace;
   font-size: 11px;
   color: #444;
+  z-index: 2;
 }
 .hud > * { pointer-events: auto; }
 
@@ -76,15 +77,18 @@ canvas {
 /* Top-right: results */
 #hud-results {
   top: 8px; right: 8px;
-  background: rgba(255,255,255,0.75);
-  padding: 6px 10px;
-  border-radius: 3px;
-  text-align: right;
+  background: none;
+  padding: 0;
   display: none;
   line-height: 1.6;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
 }
+#hud-scores { text-align: right; text-shadow: 0 0 4px rgba(255,255,255,0.8); }
 #hud-results .hud-label { color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
 #hud-results .hud-val { font-weight: 700; }
+#loss-plot { background: transparent; }
 .hud-loss { color: #996060; }
 .hud-dist { color: #887050; }
 .hud-grad { color: #506888; }
@@ -140,6 +144,12 @@ canvas {
 }
 .hud-pm:hover { background: #eee; }
 .hud-pm:active { background: #ddd; }
+.hud-grad-hint {
+  font-size: 9px;
+  color: #506888;
+  margin-left: 2px;
+  min-width: 30px;
+}
 .hud-sep {
   width: 1px;
   height: 20px;
@@ -340,13 +350,13 @@ a:hover { color: #555; }
       &middot; Iter <span id="iter-num">0</span>
     </div>
 
-    <!-- HUD: top-right results -->
+    <!-- HUD: top-right results + loss plot -->
     <div class="hud" id="hud-results">
-      <div><span class="hud-label">loss</span> <span class="hud-val hud-loss" id="loss-val">--</span></div>
-      <div><span class="hud-label">dist</span> <span class="hud-val hud-dist" id="dist-val">--</span></div>
-      <div><span class="hud-label">dL/d&theta;</span> <span class="hud-val hud-grad" id="grad-angle-val">--</span></div>
-      <div><span class="hud-label">dL/dF</span> <span class="hud-val hud-grad" id="grad-force-val">--</span></div>
-      <canvas id="loss-plot" width="130" height="50" style="display:none; margin-top:4px;"></canvas>
+      <canvas id="loss-plot" width="130" height="65" style="display:none;"></canvas>
+      <div id="hud-scores">
+        <div><span class="hud-label">loss</span> <span class="hud-val hud-loss" id="loss-val">--</span></div>
+        <div><span class="hud-label">dist</span> <span class="hud-val hud-dist" id="dist-val">--</span></div>
+      </div>
     </div>
 
     <!-- HUD: bottom controls -->
@@ -356,6 +366,7 @@ a:hover { color: #555; }
         <button class="hud-pm" id="angle-down">&minus;</button>
         <span class="hud-param-val" id="angle-display">0.0&deg;</span>
         <button class="hud-pm" id="angle-up">+</button>
+        <span class="hud-grad-hint" id="grad-angle-val"></span>
       </div>
       <div class="hud-sep"></div>
       <div class="hud-param">
@@ -363,6 +374,7 @@ a:hover { color: #555; }
         <button class="hud-pm" id="force-down">&minus;</button>
         <span class="hud-param-val" id="force-display">8.0</span>
         <button class="hud-pm" id="force-up">+</button>
+        <span class="hud-grad-hint" id="grad-force-val"></span>
       </div>
       <div class="hud-sep"></div>
       <button class="hud-btn primary" id="shoot-btn">Shoot</button>
@@ -978,29 +990,50 @@ function drawLossPlot() {
   const plotCanvas = document.getElementById('loss-plot');
   const pc = plotCanvas.getContext('2d');
   const pw = plotCanvas.width, ph = plotCanvas.height;
-  const pad = 2;
+  const ml = 18, mr = 4, mt = 4, mb = 14; // margins for labels
 
   plotCanvas.style.display = 'block';
   pc.clearRect(0, 0, pw, ph);
 
+  const plotX = ml, plotY = mt;
+  const plotW = pw - ml - mr, plotH = ph - mt - mb;
+
   // Axes
-  pc.strokeStyle = '#ccc';
+  pc.strokeStyle = '#bbb';
   pc.lineWidth = 0.5;
   pc.beginPath();
-  pc.moveTo(pad, pad);
-  pc.lineTo(pad, ph - pad);
-  pc.lineTo(pw - pad, ph - pad);
+  pc.moveTo(plotX, plotY);
+  pc.lineTo(plotX, plotY + plotH);
+  pc.lineTo(plotX + plotW, plotY + plotH);
   pc.stroke();
 
   const maxLoss = Math.max(...allLosses);
   if (maxLoss <= 0) return;
 
-  const plotX = pad + 1;
-  const plotY = pad;
-  const plotW = pw - pad * 2 - 1;
-  const plotH = ph - pad * 2;
-
+  pc.fillStyle = '#999';
+  pc.font = '8px Menlo, Monaco, monospace';
   const n = allLosses.length;
+
+  // Y-axis: "loss" label + ticks
+  pc.save();
+  pc.translate(6, plotY + plotH / 2);
+  pc.rotate(-Math.PI / 2);
+  pc.textAlign = 'center';
+  pc.fillText('loss', 0, 0);
+  pc.restore();
+  pc.textAlign = 'right';
+  pc.fillText(maxLoss >= 1000 ? (maxLoss/1000).toFixed(0)+'k' : maxLoss.toFixed(0), plotX - 2, plotY + 7);
+  pc.fillText('0', plotX - 2, plotY + plotH + 1);
+
+  // X-axis: "iter" label + ticks
+  pc.textAlign = 'center';
+  pc.fillText('iter', plotX + plotW / 2, plotY + plotH + 12);
+  pc.textAlign = 'left';
+  pc.fillText('1', plotX, plotY + plotH + 12);
+  pc.textAlign = 'right';
+  pc.fillText(String(n), plotX + plotW, plotY + plotH + 12);
+
+  // Loss curve
   pc.beginPath();
   for (let i = 0; i < n; i++) {
     const x = plotX + (i / Math.max(1, n - 1)) * plotW;
@@ -1008,16 +1041,16 @@ function drawLossPlot() {
     if (i === 0) pc.moveTo(x, y);
     else pc.lineTo(x, y);
   }
-  pc.strokeStyle = '#666';
+  pc.strokeStyle = '#777';
   pc.lineWidth = 1.5;
   pc.stroke();
 
   // Dot on latest point
-  const lastX = plotX + ((n - 1) / Math.max(1, n - 1)) * plotW;
-  const lastY = plotY + plotH - (allLosses[n - 1] / maxLoss) * plotH;
+  const lastXp = plotX + ((n - 1) / Math.max(1, n - 1)) * plotW;
+  const lastYp = plotY + plotH - (allLosses[n - 1] / maxLoss) * plotH;
   pc.beginPath();
-  pc.arc(lastX, lastY, 2, 0, Math.PI * 2);
-  pc.fillStyle = '#666';
+  pc.arc(lastXp, lastYp, 2.5, 0, Math.PI * 2);
+  pc.fillStyle = '#555';
   pc.fill();
 }
 
@@ -1164,7 +1197,8 @@ function startGame() {
 }
 
 function shoot(onComplete) {
-  if (holeComplete || animating) return;
+  if (animating) return;
+  holeComplete = false; // allow re-shooting after a hole-in
 
   const angleDeg = parseFloat(angleInput.value);
   const force = Math.max(0.5, Math.min(MAX_POWER, parseFloat(forceInput.value)));
@@ -1226,7 +1260,7 @@ function showResults(angleDeg, force, bpResult, simResult) {
   const dist = Math.sqrt(bpResult.loss);
 
   resultsPanel.style.display = 'block';
-  hudResults.style.display = 'block';
+  hudResults.style.display = 'flex';
   historyEl.style.display = 'block';
 
   if (simResult.inHole) {
@@ -1247,8 +1281,8 @@ function showResults(angleDeg, force, bpResult, simResult) {
     lossVal.className = 'hud-val hud-loss';
     distVal.textContent = dist.toFixed(1) + 'px';
     distVal.className = 'hud-val hud-dist';
-    gradAngleVal.textContent = formatGrad(bpResult.grad_angle);
-    gradForceVal.textContent = formatGrad(bpResult.grad_force);
+    gradAngleVal.textContent = '\u2207' + formatGrad(bpResult.grad_angle);
+    gradForceVal.textContent = '\u2207' + formatGrad(bpResult.grad_force);
   }
 
   // Update history
@@ -1323,7 +1357,7 @@ function lineSearch(angleDeg, force, gradAngle, gradForce, loss0) {
 
 // Manual apply: uses fixed learning rate (user is the optimizer)
 function applyGradient() {
-  if (!lastResult || holeComplete || animating) return;
+  if (!lastResult || animating) return;
 
   const lr = parseFloat(lrInput.value) || 0.001;
   const newAngle = lastResult.angleDeg - lr * lastResult.grad_angle;
@@ -1336,7 +1370,7 @@ function applyGradient() {
 
 // Auto apply: uses Armijo line search (a real optimization algorithm)
 function applyGradientWithLineSearch() {
-  if (!lastResult || holeComplete) return;
+  if (!lastResult) return;
 
   const loss0 = lastResult.grad_angle !== undefined ?
     evalLoss(lastResult.angleDeg, lastResult.force) : Infinity;
@@ -1354,7 +1388,7 @@ function applyGradientWithLineSearch() {
 }
 
 function verifyGradient() {
-  if (!lastResult || holeComplete) return;
+  if (!lastResult) return;
 
   const angleDeg = lastResult.angleDeg;
   const force = lastResult.force;
