@@ -379,12 +379,17 @@ a:hover { color: #555; }
   body { padding: 8px; }
   h1 { font-size: 1.6em; }
   .subtitle { font-size: 0.85em; }
-  #hud-controls { gap: 3px; padding: 4px 6px; }
-  .hud-param-val { font-size: 11px; min-width: 40px; }
-  .hud-pm { width: 28px; height: 28px; min-height: 28px; font-size: 16px; }
-  .hud-btn { font-size: 10px; padding: 4px 8px; }
-  #hud-info { font-size: 10px; }
-  #hud-results { font-size: 10px; }
+  #hud-controls {
+    gap: 2px; padding: 2px 3px;
+    flex-wrap: wrap;
+  }
+  .hud-param-val { font-size: 10px; min-width: 32px; }
+  .hud-pm { width: 24px; height: 24px; min-height: 24px; font-size: 14px; }
+  .hud-btn { font-size: 9px; padding: 3px 5px; min-height: 24px; }
+  .hud-sep { display: none; }
+  .hud-grad-hint { display: none; }
+  #hud-info { font-size: 9px; }
+  #hud-results { font-size: 9px; }
   #controls { gap: 8px; }
   .control-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
