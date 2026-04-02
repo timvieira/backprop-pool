@@ -583,6 +583,8 @@ let currentCourse = 0;
 let iteration = 0;
 let totalGradSteps = 0;
 let trajectory = [];
+let allTrajectories = []; // all previous trajectories for visualization
+let allLosses = []; // loss at each iteration
 let lastResult = null;
 let holeComplete = false;
 let particles = [];
@@ -940,6 +942,74 @@ function drawTrajectory(positions, maxIdx) {
   }
 }
 
+function drawTrajectoryWithAlpha(positions, alpha) {
+  if (positions.length < 2) return;
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.moveTo(positions[0].x, positions[0].y);
+  for (let i = 1; i < positions.length; i++) {
+    ctx.lineTo(positions[i].x, positions[i].y);
+  }
+  ctx.strokeStyle = '#0181eb';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawLossPlot() {
+  const pw = 140, ph = 70;
+  const px = W - pw - 12, py = H - ph - 12;
+  const pad = 4;
+
+  // Background
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px, py, pw, ph);
+
+  // Label
+  ctx.fillStyle = '#888';
+  ctx.font = '9px Menlo, Monaco, monospace';
+  ctx.fillText('loss', px + 4, py + 11);
+
+  // Plot area
+  const plotX = px + pad;
+  const plotY = py + 16;
+  const plotW = pw - pad * 2;
+  const plotH = ph - 20;
+
+  const maxLoss = Math.max(...allLosses);
+  if (maxLoss <= 0) return;
+
+  const n = allLosses.length;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = plotX + (i / Math.max(1, n - 1)) * plotW;
+    const y = plotY + plotH - (allLosses[i] / maxLoss) * plotH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#0181eb';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dots on first and last
+  for (const i of [0, n - 1]) {
+    const x = plotX + (i / Math.max(1, n - 1)) * plotW;
+    const y = plotY + plotH - (allLosses[i] / maxLoss) * plotH;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#0181eb';
+    ctx.fill();
+  }
+
+  // Iteration axis label
+  ctx.fillStyle = '#aaa';
+  ctx.fillText('1', plotX, py + ph - 2);
+  ctx.fillText(String(n), plotX + plotW - ctx.measureText(String(n)).width, py + ph - 2);
+}
+
 function drawLossLine(fx, fy, hx, hy) {
   ctx.beginPath();
   ctx.setLineDash([4, 4]);
@@ -999,18 +1069,21 @@ function render() {
 
   drawCourse(currentCourse);
 
-  // Draw trajectory (animated or full)
+  // Draw all previous trajectories (faded, oldest most faded)
+  for (let t = 0; t < allTrajectories.length; t++) {
+    const alpha = 0.08 + 0.12 * (t / Math.max(1, allTrajectories.length));
+    drawTrajectoryWithAlpha(allTrajectories[t], alpha);
+  }
+
+  // Draw current trajectory (animated or full)
   if (animating && animPositions.length > 0) {
     drawTrajectory(animPositions, animFrame);
-    // Draw ball at current animation position
     const idx = Math.min(animFrame, animPositions.length - 1);
     if (!holeComplete || idx < animPositions.length - 1) {
       drawBallAt(animPositions[idx].x, animPositions[idx].y);
     }
   } else if (trajectory.length > 0) {
-    // Show full trajectory
     drawTrajectory(trajectory);
-    // Draw final ball position (ghost)
     if (lastResult && !lastResult.inHole) {
       drawBallAt(lastResult.finalX, lastResult.finalY, 0.6);
       drawLossLine(lastResult.finalX, lastResult.finalY, course.hole.x, course.hole.y);
@@ -1022,12 +1095,16 @@ function render() {
     if (!holeComplete) {
       drawBallAt(course.ball.x, course.ball.y);
     }
-    // Draw direction arrow
     const angleDeg = parseFloat(angleInput.value) || 0;
     const force = parseFloat(forceInput.value) || 1;
     if (!holeComplete) {
       drawDirectionArrow(course.ball.x, course.ball.y, angleDeg, force);
     }
+  }
+
+  // Draw loss plot (bottom-right corner)
+  if (allLosses.length > 1) {
+    drawLossPlot();
   }
 
   drawParticles();
@@ -1043,6 +1120,8 @@ function loadHole(idx) {
   iteration = 0;
   holeComplete = false;
   trajectory = [];
+  allTrajectories = [];
+  allLosses = [];
   lastResult = null;
   particles = [];
   history = [];
@@ -1102,7 +1181,12 @@ function shoot(onComplete) {
   totalStepsEl.textContent = totalGradSteps;
 
   lastResult = simResult;
+  // Save previous trajectory before overwriting
+  if (trajectory.length > 0) {
+    allTrajectories.push(trajectory);
+  }
   trajectory = simResult.positions;
+  allLosses.push(bpResult.loss);
 
   // Animate trajectory
   animPositions = simResult.positions;
