@@ -310,6 +310,27 @@ button:disabled:hover { background: #f8f8f8; border-color: #ccc; }
   font-size: 1.2em; padding: 12px 50px; border-radius: 4px;
 }
 #start-screen button:hover { background: #444; }
+#help-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
+  z-index: 150; display: flex; justify-content: center; align-items: center;
+}
+#help-content {
+  max-width: 520px; padding: 30px 36px;
+  font-family: 'EB Garamond', Georgia, serif;
+  color: #333; line-height: 1.6; font-size: 15px;
+}
+#help-content h2 { font-size: 1.8em; font-weight: 575; margin-bottom: 0.4em; }
+#help-content h3 { font-size: 1.1em; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.3em; color: #444; }
+#help-content ol { margin-left: 1.2em; margin-bottom: 1em; }
+#help-content li { margin-bottom: 0.3em; }
+#help-content table { border-collapse: collapse; margin-bottom: 1em; width: 100%; }
+#help-content td { padding: 3px 10px 3px 0; vertical-align: top; font-size: 14px; border-bottom: 1px solid #eee; }
+#help-content kbd {
+  font-family: Menlo, Monaco, monospace; font-size: 12px;
+  background: #f0f0f0; border: 1px solid #ddd; border-radius: 3px;
+  padding: 1px 5px; color: #444;
+}
 a { color: inherit; text-decoration: underline; transition: color 0.3s; }
 a:hover { color: #555; }
 @media (max-width: 600px) {
@@ -384,6 +405,47 @@ a:hover { color: #555; }
       <button class="hud-btn" id="reset-btn">Reset</button>
       <button class="hud-btn" id="next-btn" style="display:none">Next</button>
       <button class="hud-btn" id="fs-btn" title="Fullscreen">&#x26F6;</button>
+      <button class="hud-btn" id="help-btn" title="Help">?</button>
+    </div>
+  </div>
+
+  <!-- Help overlay -->
+  <div id="help-overlay" style="display:none;">
+    <div id="help-content">
+      <h2>Backprop Golf</h2>
+      <p>Learn <strong>gradient descent</strong> by playing mini golf. Adjust angle and force, then shoot. <strong>Backpropagation</strong> computes how the loss (squared distance to hole) changes with your parameters. Use the gradient to improve your shot.</p>
+
+      <h3>How to play</h3>
+      <ol>
+        <li>Adjust <strong>&theta;</strong> (angle) and <strong>F</strong> (force) using +/&minus; buttons or arrow keys</li>
+        <li>Press <strong>Shoot</strong> to fire the ball</li>
+        <li>Read the gradients (&nabla;) next to each parameter &mdash; they tell you which direction reduces the loss</li>
+        <li>Press <strong>Grad</strong> to apply one gradient step, or tweak manually</li>
+        <li>Repeat until the ball goes in!</li>
+      </ol>
+
+      <h3>What the HUD shows</h3>
+      <table>
+        <tr><td><strong>loss</strong></td><td>Squared distance from ball's resting position to hole</td></tr>
+        <tr><td><strong>dist</strong></td><td>Distance in pixels</td></tr>
+        <tr><td><strong>&nabla;</strong> values</td><td>Gradient of loss w.r.t. each parameter (computed by backprop through the physics)</td></tr>
+        <tr><td><strong>loss curve</strong></td><td>Loss over iterations &mdash; should decrease!</td></tr>
+      </table>
+
+      <h3>Keyboard shortcuts</h3>
+      <table>
+        <tr><td><kbd>Space</kbd> / <kbd>Enter</kbd></td><td>Shoot</td></tr>
+        <tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>Adjust angle</td></tr>
+        <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>Adjust force</td></tr>
+        <tr><td><kbd>g</kbd></td><td>Apply gradient step</td></tr>
+        <tr><td><kbd>o</kbd></td><td>Optimize (auto gradient descent with line search)</td></tr>
+        <tr><td><kbd>r</kbd></td><td>Reset hole</td></tr>
+        <tr><td><kbd>n</kbd></td><td>Next hole</td></tr>
+        <tr><td><kbd>f</kbd></td><td>Fullscreen</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Toggle this help</td></tr>
+      </table>
+
+      <p style="margin-top:1em; color:#888; font-size:0.85em;">Press <kbd>?</kbd> or <kbd>Escape</kbd> to close</p>
     </div>
   </div>
 
@@ -1518,6 +1580,15 @@ document.getElementById('fs-btn').addEventListener('click', () => {
     document.documentElement.requestFullscreen();
   }
 });
+
+const helpOverlay = document.getElementById('help-overlay');
+function toggleHelp() {
+  helpOverlay.style.display = helpOverlay.style.display === 'none' ? 'flex' : 'none';
+}
+document.getElementById('help-btn').addEventListener('click', toggleHelp);
+helpOverlay.addEventListener('click', (e) => {
+  if (e.target === helpOverlay) toggleHelp();
+});
 nextBtn.addEventListener('click', () => {
   if (currentCourse < courses.length - 1) {
     loadHole(currentCourse + 1);
@@ -1539,6 +1610,16 @@ document.addEventListener('keydown', (e) => {
     }
     return;
   }
+
+  // Help toggle (works even when help is open)
+  if (e.key === '?' || (e.key === 'Escape' && helpOverlay.style.display !== 'none')) {
+    e.preventDefault();
+    toggleHelp();
+    return;
+  }
+
+  // Don't process other shortcuts while help is open
+  if (helpOverlay.style.display !== 'none') return;
 
   switch (e.key) {
     case ' ':
