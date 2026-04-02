@@ -53,6 +53,19 @@ h1 {
   width: 100%;
   height: auto;
 }
+#canvas-wrap:fullscreen {
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#canvas-wrap:fullscreen #canvas {
+  border: none;
+  border-radius: 0;
+  max-height: 100vh;
+  max-width: 100vw;
+  object-fit: contain;
+}
 #loss-plot { border: none; }
 .hud {
   position: absolute;
@@ -1579,7 +1592,7 @@ document.getElementById('fs-btn').addEventListener('click', () => {
   if (document.fullscreenElement) {
     document.exitFullscreen();
   } else {
-    document.documentElement.requestFullscreen();
+    document.getElementById('canvas-wrap').requestFullscreen();
   }
 });
 
@@ -1643,7 +1656,7 @@ document.addEventListener('keydown', (e) => {
       break;
     case 'f':
       if (document.fullscreenElement) document.exitFullscreen();
-      else document.documentElement.requestFullscreen();
+      else document.getElementById('canvas-wrap').requestFullscreen();
       break;
     case 'ArrowLeft':
       e.preventDefault();
