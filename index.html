@@ -1160,14 +1160,66 @@ function formatGrad(val) {
   return val.toFixed(2);
 }
 
+function clampForce(f) {
+  return Math.max(0.5, Math.min(MAX_POWER, f));
+}
+
+function evalLoss(angleDeg, force) {
+  const course = courses[currentCourse];
+  const sim = simulate(angleDeg, force, currentCourse);
+  if (sim.inHole) return 0;
+  const dx = sim.finalX - course.hole.x;
+  const dy = sim.finalY - course.hole.y;
+  return dx * dx + dy * dy;
+}
+
+// Armijo backtracking line search
+// Returns the step size alpha that satisfies sufficient decrease
+function lineSearch(angleDeg, force, gradAngle, gradForce, loss0) {
+  const c = 1e-4;                // sufficient decrease parameter
+  const rho = 0.5;               // step shrink factor
+  let alpha = 1.0;               // initial step size
+  const gradNormSq = gradAngle * gradAngle + gradForce * gradForce;
+  if (gradNormSq < 1e-16) return 0;
+
+  for (let i = 0; i < 30; i++) {
+    const newAngle = angleDeg - alpha * gradAngle;
+    const newForce = clampForce(force - alpha * gradForce);
+    const newLoss = evalLoss(newAngle, newForce);
+    // Armijo condition: f(x - α∇f) ≤ f(x) - c·α·‖∇f‖²
+    if (newLoss <= loss0 - c * alpha * gradNormSq) {
+      return alpha;
+    }
+    alpha *= rho;
+  }
+  return alpha; // return smallest tried
+}
+
+// Manual apply: uses fixed learning rate (user is the optimizer)
 function applyGradient() {
   if (!lastResult || holeComplete || animating) return;
 
   const lr = parseFloat(lrInput.value) || 0.001;
   const newAngle = lastResult.angleDeg - lr * lastResult.grad_angle;
-  const newForce = Math.max(0.5, Math.min(MAX_POWER,
-    lastResult.force - lr * lastResult.grad_force
-  ));
+  const newForce = clampForce(lastResult.force - lr * lastResult.grad_force);
+
+  angleInput.value = newAngle.toFixed(1);
+  forceInput.value = newForce.toFixed(1);
+}
+
+// Auto apply: uses Armijo line search (a real optimization algorithm)
+function applyGradientWithLineSearch() {
+  if (!lastResult || holeComplete) return;
+
+  const loss0 = lastResult.grad_angle !== undefined ?
+    evalLoss(lastResult.angleDeg, lastResult.force) : Infinity;
+  const alpha = lineSearch(
+    lastResult.angleDeg, lastResult.force,
+    lastResult.grad_angle, lastResult.grad_force, loss0
+  );
+
+  const newAngle = lastResult.angleDeg - alpha * lastResult.grad_angle;
+  const newForce = clampForce(lastResult.force - alpha * lastResult.grad_force);
 
   angleInput.value = newAngle.toFixed(1);
   forceInput.value = newForce.toFixed(1);
@@ -1244,9 +1296,9 @@ function autoGDStep() {
     return;
   }
 
-  // If this is not the first iteration, apply gradient before shooting
+  // After first iteration, apply gradient with Armijo line search
   if (lastResult && lastResult.grad_angle !== undefined) {
-    applyGradient();
+    applyGradientWithLineSearch();
   }
 
   shoot(() => {
