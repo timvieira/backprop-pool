@@ -354,6 +354,36 @@ button:disabled:hover { background: #f8f8f8; border-color: #ccc; }
   background: #f0f0f0; border: 1px solid #ddd; border-radius: 3px;
   padding: 1px 5px; color: #444;
 }
+#contour-wrap {
+  position: relative;
+  width: 500px;
+  max-width: 100%;
+}
+#contour {
+  width: 100%;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: crosshair;
+}
+#contour-labels {
+  pointer-events: none;
+  font-family: Menlo, Monaco, monospace;
+  font-size: 10px;
+  color: #888;
+}
+.contour-xlabel {
+  display: block;
+  text-align: center;
+  margin-top: 2px;
+}
+.contour-ylabel {
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: rotate(-90deg) translateX(-50%);
+  transform-origin: 0 0;
+}
 a { color: inherit; text-decoration: underline; transition: color 0.3s; }
 a:hover { color: #555; }
 @media (max-width: 600px) {
@@ -422,14 +452,14 @@ a:hover { color: #555; }
         <span class="hud-grad-hint" id="grad-force-val"></span>
       </div>
       <div class="hud-sep"></div>
-      <button class="hud-btn primary" id="shoot-btn">Shoot</button>
-      <button class="hud-btn" id="apply-btn">Grad</button>
+      <button class="hud-btn primary" id="shoot-btn" title="Space / Enter">Shoot</button>
+      <button class="hud-btn" id="apply-btn" title="g">Grad</button>
       <input type="number" id="lr-input" step="0.0001" min="0" value="0.001" class="hud-lr-input" title="Learning rate">
-      <button class="hud-btn" id="auto-btn">Optimize</button>
-      <button class="hud-btn" id="reset-btn">Reset</button>
-      <button class="hud-btn" id="next-btn" style="display:none">Next</button>
-      <button class="hud-btn" id="fs-btn" title="Fullscreen">&#x26F6;</button>
-      <button class="hud-btn" id="help-btn" title="Help">?</button>
+      <button class="hud-btn" id="auto-btn" title="o">Optimize</button>
+      <button class="hud-btn" id="reset-btn" title="r">Reset</button>
+      <button class="hud-btn" id="next-btn" style="display:none" title="n">Next</button>
+      <button class="hud-btn" id="fs-btn" title="f — Fullscreen">&#x26F6;</button>
+      <button class="hud-btn" id="help-btn" title="?">?</button>
     </div>
   </div>
 
@@ -476,6 +506,15 @@ a:hover { color: #555; }
   <!-- Hidden inputs that store the actual values -->
   <input type="hidden" id="angle-input" value="0">
   <input type="hidden" id="force-input" value="8">
+
+  <!-- Contour plot of loss landscape -->
+  <div id="contour-wrap">
+    <canvas id="contour" width="400" height="200"></canvas>
+    <div id="contour-labels">
+      <span class="contour-ylabel">Force</span>
+      <span class="contour-xlabel">&theta; (degrees)</span>
+    </div>
+  </div>
 
   <div id="controls">
     <div id="results-panel">
@@ -704,6 +743,8 @@ let animating = false;
 let autoGDRunning = false;
 let autoGDTimer = null;
 let prevAutoLoss = Infinity;
+let paramHistory = []; // {angle, force} for each shot
+let lossGrid = null;   // Float64Array for contour plot
 let animFrame = 0;
 let animPositions = [];
 
@@ -1249,6 +1290,7 @@ function loadHole(idx) {
   trajectory = [];
   allTrajectories = [];
   allLosses = [];
+  paramHistory = [];
   lastResult = null;
   particles = [];
   history = [];
@@ -1276,6 +1318,9 @@ function loadHole(idx) {
   nextBtn.style.display = 'none';
   verifyPanel.style.display = 'none';
   verifyStatus.textContent = '';
+
+  computeLossGrid();
+  drawContourPlot();
 }
 
 function startGame() {
@@ -1316,6 +1361,7 @@ function shoot(onComplete) {
   }
   trajectory = simResult.positions;
   allLosses.push(bpResult.loss);
+  paramHistory.push({ angle: angleDeg, force });
 
   // Animate trajectory
   animPositions = simResult.positions;
@@ -1387,8 +1433,9 @@ function showResults(angleDeg, force, bpResult, simResult) {
   historyEl.appendChild(entry);
   historyEl.scrollTop = historyEl.scrollHeight;
 
-  // Update loss plot
+  // Update loss plot and contour
   if (allLosses.length > 1) drawLossPlot();
+  drawContourPlot();
 
   // Clear verify panel on new shot
   verifyPanel.style.display = 'none';
@@ -1455,6 +1502,7 @@ function applyGradient() {
   angleInput.value = parseFloat(angleInput.value).toFixed(1);
   forceInput.value = newForce.toFixed(1);
   updateDisplays();
+  drawContourPlot();
 }
 
 // Auto apply: uses Armijo line search (a real optimization algorithm)
@@ -1688,6 +1736,191 @@ document.addEventListener('keydown', (e) => {
       break;
   }
 });
+
+// ========== CONTOUR PLOT ==========
+
+const contourCanvas = document.getElementById('contour');
+const cctx = contourCanvas.getContext('2d');
+const CW = contourCanvas.width, CH = contourCanvas.height;
+const GRID_W = 60, GRID_H = 40;
+const ANGLE_MIN = 0, ANGLE_MAX = 360;
+const FORCE_MIN = 0.5;
+// FORCE_MAX = MAX_POWER (already defined)
+
+function computeLossGrid() {
+  lossGrid = new Float64Array(GRID_W * GRID_H);
+  const course = courses[currentCourse];
+  for (let j = 0; j < GRID_H; j++) {
+    for (let i = 0; i < GRID_W; i++) {
+      const angle = ANGLE_MIN + (i / (GRID_W - 1)) * (ANGLE_MAX - ANGLE_MIN);
+      const force = FORCE_MIN + (j / (GRID_H - 1)) * (MAX_POWER - FORCE_MIN);
+      const sim = simulate(angle, force, currentCourse);
+      if (sim.inHole) {
+        lossGrid[j * GRID_W + i] = 0;
+      } else {
+        const dx = sim.finalX - course.hole.x;
+        const dy = sim.finalY - course.hole.y;
+        lossGrid[j * GRID_W + i] = dx * dx + dy * dy;
+      }
+    }
+  }
+}
+
+function drawContourPlot() {
+  if (!lossGrid) return;
+  cctx.clearRect(0, 0, CW, CH);
+
+  // Find max for color scaling (use log scale)
+  let maxLog = 0;
+  for (let k = 0; k < lossGrid.length; k++) {
+    const v = Math.log(1 + lossGrid[k]);
+    if (v > maxLog) maxLog = v;
+  }
+  if (maxLog === 0) maxLog = 1;
+
+  // Draw heatmap cells
+  const cellW = CW / GRID_W;
+  const cellH = CH / GRID_H;
+  for (let j = 0; j < GRID_H; j++) {
+    for (let i = 0; i < GRID_W; i++) {
+      const loss = lossGrid[j * GRID_W + i];
+      const t = Math.log(1 + loss) / maxLog; // 0 = low loss, 1 = high
+      // Color: light sage (low loss) to dark (high loss)
+      const r = Math.round(200 - t * 120);
+      const g = Math.round(210 - t * 110);
+      const b = Math.round(195 - t * 115);
+      cctx.fillStyle = `rgb(${r},${g},${b})`;
+      // y-axis is inverted: force increases upward
+      cctx.fillRect(i * cellW, (GRID_H - 1 - j) * cellH, Math.ceil(cellW), Math.ceil(cellH));
+    }
+  }
+
+  // Draw contour lines
+  const levels = 8;
+  cctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  cctx.lineWidth = 0.5;
+  for (let l = 1; l <= levels; l++) {
+    const threshold = (l / (levels + 1)) * maxLog;
+    for (let j = 0; j < GRID_H - 1; j++) {
+      for (let i = 0; i < GRID_W - 1; i++) {
+        const v00 = Math.log(1 + lossGrid[j * GRID_W + i]);
+        const v10 = Math.log(1 + lossGrid[j * GRID_W + i + 1]);
+        const v01 = Math.log(1 + lossGrid[(j + 1) * GRID_W + i]);
+        const v11 = Math.log(1 + lossGrid[(j + 1) * GRID_W + i + 1]);
+        // Simple marching squares: check if contour crosses any edge
+        const above = [v00 >= threshold, v10 >= threshold, v01 >= threshold, v11 >= threshold];
+        const count = above.filter(Boolean).length;
+        if (count > 0 && count < 4) {
+          const cx = (i + 0.5) * cellW;
+          const cy = (GRID_H - 1 - j - 0.5) * cellH;
+          cctx.beginPath();
+          cctx.arc(cx, cy, 0.5, 0, Math.PI * 2);
+          cctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Draw parameter history trajectory
+  if (paramHistory.length > 1) {
+    cctx.beginPath();
+    for (let i = 0; i < paramHistory.length; i++) {
+      const px = paramToContourX(paramHistory[i].angle);
+      const py = paramToContourY(paramHistory[i].force);
+      if (i === 0) cctx.moveTo(px, py);
+      else cctx.lineTo(px, py);
+    }
+    cctx.strokeStyle = 'rgba(60,60,60,0.6)';
+    cctx.lineWidth = 1.5;
+    cctx.stroke();
+
+    // Dots at each iteration
+    for (let i = 0; i < paramHistory.length; i++) {
+      const px = paramToContourX(paramHistory[i].angle);
+      const py = paramToContourY(paramHistory[i].force);
+      const alpha = 0.3 + 0.7 * (i / (paramHistory.length - 1));
+      cctx.beginPath();
+      cctx.arc(px, py, 3, 0, Math.PI * 2);
+      cctx.fillStyle = `rgba(60,60,60,${alpha})`;
+      cctx.fill();
+    }
+  }
+
+  // Draw current point
+  const curAngle = parseFloat(angleInput.value) || 0;
+  const curForce = parseFloat(forceInput.value) || 1;
+  const cpx = paramToContourX(curAngle);
+  const cpy = paramToContourY(curForce);
+  cctx.beginPath();
+  cctx.arc(cpx, cpy, 5, 0, Math.PI * 2);
+  cctx.fillStyle = '#fff';
+  cctx.fill();
+  cctx.strokeStyle = '#333';
+  cctx.lineWidth = 2;
+  cctx.stroke();
+
+  // Axis ticks
+  cctx.fillStyle = '#888';
+  cctx.font = '9px Menlo, Monaco, monospace';
+  cctx.textAlign = 'center';
+  for (let a = 0; a <= 360; a += 90) {
+    const x = paramToContourX(a);
+    cctx.fillText(a + '\u00B0', x, CH - 2);
+  }
+  cctx.textAlign = 'right';
+  const forceSteps = [1, 5, 10, 15, 20, 25].filter(f => f <= MAX_POWER);
+  for (const f of forceSteps) {
+    const y = paramToContourY(f);
+    if (y > 8 && y < CH - 8) cctx.fillText(f, 16, y + 3);
+  }
+}
+
+function paramToContourX(angle) {
+  return ((angle % 360 + 360) % 360 / 360) * CW;
+}
+function paramToContourY(force) {
+  return CH - ((force - FORCE_MIN) / (MAX_POWER - FORCE_MIN)) * CH;
+}
+function contourToAngle(x) {
+  return (x / CW) * 360;
+}
+function contourToForce(y) {
+  return FORCE_MIN + ((CH - y) / CH) * (MAX_POWER - FORCE_MIN);
+}
+
+// Contour plot drag interaction
+let contourDragging = false;
+function contourSetFromEvent(e) {
+  const rect = contourCanvas.getBoundingClientRect();
+  const sx = CW / rect.width, sy = CH / rect.height;
+  const mx = (e.clientX - rect.left) * sx;
+  const my = (e.clientY - rect.top) * sy;
+  const angle = ((contourToAngle(mx) % 360) + 360) % 360;
+  const force = Math.max(FORCE_MIN, Math.min(MAX_POWER, contourToForce(my)));
+  angleInput.value = angle.toFixed(1);
+  forceInput.value = force.toFixed(1);
+  updateDisplays();
+  drawContourPlot();
+}
+contourCanvas.addEventListener('mousedown', (e) => {
+  contourDragging = true;
+  contourSetFromEvent(e);
+});
+contourCanvas.addEventListener('mousemove', (e) => {
+  if (contourDragging) contourSetFromEvent(e);
+});
+document.addEventListener('mouseup', () => { contourDragging = false; });
+// Touch support
+contourCanvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  contourDragging = true;
+  contourSetFromEvent(e.touches[0]);
+}, { passive: false });
+contourCanvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (contourDragging) contourSetFromEvent(e.touches[0]);
+}, { passive: false });
+contourCanvas.addEventListener('touchend', () => { contourDragging = false; });
 
 // ========== INIT ==========
 
