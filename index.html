@@ -3,201 +3,360 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Golf</title>
+<title>Backprop Golf</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: #1a1a2e;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  overflow: hidden;
   color: #fff;
+  padding: 20px;
 }
-#game-container {
-  position: relative;
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 820px;
+}
+h1 {
+  font-size: 36px;
+  color: #ffd700;
+  text-shadow: 0 2px 20px rgba(255,215,0,0.3);
+  margin-bottom: -8px;
+}
+.subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 canvas {
-  border-radius: 12px;
-  box-shadow: 0 0 40px rgba(0,0,0,0.5);
-  cursor: crosshair;
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  max-width: 100%;
+  height: auto;
 }
-#ui-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  padding: 12px 20px;
+#controls {
+  width: 800px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.control-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc;
+  white-space: nowrap;
+}
+.control-group input[type="number"] {
+  width: 90px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a4a;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+}
+.control-group input[type="number"]:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+.unit {
+  font-size: 12px;
+  color: #888;
+}
+button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+button:hover {
+  transform: scale(1.03);
+}
+button:active {
+  transform: scale(0.98);
+}
+#shoot-btn {
+  background: linear-gradient(135deg, #ffd700, #f0a000);
+  color: #1a1a2e;
+  padding: 8px 28px;
+  font-size: 16px;
+}
+#shoot-btn:hover {
+  box-shadow: 0 2px 15px rgba(255,215,0,0.4);
+}
+#apply-btn {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: #fff;
+}
+#next-btn {
+  background: linear-gradient(135deg, #ffd700, #f0a000);
+  color: #1a1a2e;
+  display: none;
+}
+#verify-btn {
+  background: #333;
+  color: #aaa;
+  font-size: 12px;
+  padding: 5px 12px;
+}
+.info-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  pointer-events: none;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-#ui-overlay > * { pointer-events: auto; }
-.ui-panel {
-  background: rgba(0,0,0,0.5);
+.info-pill {
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(8px);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
   font-weight: 600;
+}
+.info-pill span {
+  color: #ffd700;
+}
+#results-panel {
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: none;
+  width: 100%;
+}
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+}
+.result-item {
+  font-size: 13px;
+}
+.result-label {
+  color: #888;
+  font-size: 11px;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.ui-panel span { color: #ffd700; }
+.result-value {
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 600;
+}
+.result-value.loss { color: #ff6b6b; }
+.result-value.dist { color: #ffa726; }
+.result-value.grad { color: #64b5f6; }
+.result-value.good { color: #4caf50; }
+#verify-panel {
+  display: none;
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 8px;
+  font-family: 'Courier New', monospace;
+  background: rgba(0,0,0,0.3);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+#history {
+  display: none;
+  width: 100%;
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #aaa;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+#history div { padding: 1px 0; }
+#history .latest { color: #ffd700; }
 #message {
-  position: absolute;
-  top: 50%; left: 50%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 32px;
+  font-size: 48px;
   font-weight: 800;
   text-align: center;
   pointer-events: none;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  text-shadow: 0 3px 15px rgba(0,0,0,0.8);
   opacity: 0;
   transition: opacity 0.3s;
+  z-index: 100;
 }
 #start-screen {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-radius: 12px;
-  z-index: 10;
+  z-index: 200;
 }
 #start-screen h1 {
   font-size: 52px;
   margin-bottom: 8px;
-  color: #ffd700;
-  text-shadow: 0 2px 20px rgba(255,215,0,0.4);
 }
-#start-screen p {
+#start-screen .subtitle {
+  margin-bottom: 20px;
   font-size: 16px;
-  color: #aaa;
+}
+#start-screen .desc {
+  max-width: 500px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  line-height: 1.6;
   margin-bottom: 30px;
 }
-#start-screen button, #next-btn {
+#start-screen button {
   background: linear-gradient(135deg, #ffd700, #f0a000);
-  border: none;
   color: #1a1a2e;
-  font-size: 18px;
-  font-weight: 700;
-  padding: 14px 40px;
+  font-size: 20px;
+  padding: 14px 50px;
   border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-#start-screen button:hover, #next-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 20px rgba(255,215,0,0.4);
-}
-#next-btn {
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  pointer-events: auto;
-  z-index: 5;
-}
-#scorecard {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(6px);
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 12px;
-  z-index: 10;
-}
-#scorecard h2 { font-size: 36px; color: #ffd700; margin-bottom: 20px; }
-#scorecard table {
-  border-collapse: collapse;
-  margin-bottom: 24px;
-}
-#scorecard th, #scorecard td {
-  padding: 6px 18px;
-  text-align: center;
-  font-size: 15px;
-}
-#scorecard th { color: #aaa; border-bottom: 1px solid #444; }
-#scorecard td { color: #fff; }
-#scorecard .par-cell { color: #aaa; }
-#scorecard .under { color: #4caf50; }
-#scorecard .over { color: #f44336; }
-#scorecard .even { color: #ffd700; }
-#scorecard button {
-  background: linear-gradient(135deg, #ffd700, #f0a000);
-  border: none;
-  color: #1a1a2e;
-  font-size: 18px;
-  font-weight: 700;
-  padding: 14px 40px;
-  border-radius: 8px;
-  cursor: pointer;
 }
 </style>
 </head>
 <body>
-<div id="game-container">
-  <canvas id="canvas"></canvas>
-  <div id="ui-overlay">
-    <div class="ui-panel" id="hole-info">Hole <span id="hole-num">1</span> / 9 &nbsp; Par <span id="par-num">3</span></div>
-    <div class="ui-panel">Strokes: <span id="stroke-count">0</span></div>
+<div id="app">
+  <h1>Backprop Golf</h1>
+  <p class="subtitle">Learn gradient descent by optimizing your golf shot</p>
+
+  <canvas id="canvas" width="800" height="560"></canvas>
+
+  <div id="controls">
+    <div class="info-bar">
+      <div class="info-pill">Hole <span id="hole-num">1</span> / <span id="hole-total">6</span> &nbsp; Par <span id="par-num">3</span></div>
+      <div class="info-pill">Iteration: <span id="iter-num">0</span></div>
+      <div class="info-pill">Total steps: <span id="total-steps">0</span></div>
+    </div>
+
+    <div class="control-row">
+      <div class="control-group">
+        <label>Angle:</label>
+        <input type="number" id="angle-input" step="0.1" value="0">
+        <span class="unit">deg</span>
+      </div>
+      <div class="control-group">
+        <label>Force:</label>
+        <input type="number" id="force-input" step="0.1" min="0.5" max="18" value="8">
+      </div>
+      <button id="shoot-btn">Shoot!</button>
+      <div class="control-group">
+        <label>LR:</label>
+        <input type="number" id="lr-input" step="0.0001" min="0" value="0.001">
+      </div>
+      <button id="apply-btn">Apply Gradient</button>
+      <button id="next-btn">Next Hole</button>
+    </div>
+
+    <div id="results-panel">
+      <div class="results-grid">
+        <div class="result-item">
+          <div class="result-label">Loss (dist&sup2;)</div>
+          <div class="result-value loss" id="loss-val">--</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Distance to hole</div>
+          <div class="result-value dist" id="dist-val">--</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">dL/d(angle)</div>
+          <div class="result-value grad" id="grad-angle-val">--</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">dL/d(force)</div>
+          <div class="result-value grad" id="grad-force-val">--</div>
+        </div>
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button id="verify-btn">Verify with finite differences</button>
+        <span id="verify-status" style="font-size: 12px; color: #888;"></span>
+      </div>
+      <div id="verify-panel"></div>
+    </div>
+
+    <div id="history"></div>
   </div>
-  <div id="message"></div>
-  <button id="next-btn">Next Hole &rarr;</button>
-  <div id="start-screen">
-    <h1>Mini Golf</h1>
-    <p>Click &amp; drag to aim, release to shoot</p>
-    <button onclick="startGame()">Play</button>
-  </div>
-  <div id="scorecard">
-    <h2>Scorecard</h2>
-    <div id="scorecard-body"></div>
-    <button onclick="startGame()">Play Again</button>
-  </div>
+</div>
+
+<div id="message"></div>
+
+<div id="start-screen">
+  <h1>Backprop Golf</h1>
+  <p class="subtitle">Learn Backpropagation Through Mini Golf</p>
+  <p class="desc">
+    Choose an angle and force to hit the ball. The ball bounces around following physics.
+    After each shot, <strong>backpropagation</strong> computes the gradient of the loss
+    (distance&sup2; to hole) with respect to your parameters.
+    Use the gradient to make small adjustments &mdash; this is <strong>gradient descent</strong>!
+  </p>
+  <button onclick="startGame()">Play</button>
 </div>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const W = 800, H = 560;
-canvas.width = W;
-canvas.height = H;
 
 // UI elements
 const holeNumEl = document.getElementById('hole-num');
+const holeTotalEl = document.getElementById('hole-total');
 const parNumEl = document.getElementById('par-num');
-const strokeCountEl = document.getElementById('stroke-count');
-const messageEl = document.getElementById('message');
+const iterNumEl = document.getElementById('iter-num');
+const totalStepsEl = document.getElementById('total-steps');
+const angleInput = document.getElementById('angle-input');
+const forceInput = document.getElementById('force-input');
+const lrInput = document.getElementById('lr-input');
+const shootBtn = document.getElementById('shoot-btn');
+const applyBtn = document.getElementById('apply-btn');
 const nextBtn = document.getElementById('next-btn');
+const verifyBtn = document.getElementById('verify-btn');
+const resultsPanel = document.getElementById('results-panel');
+const lossVal = document.getElementById('loss-val');
+const distVal = document.getElementById('dist-val');
+const gradAngleVal = document.getElementById('grad-angle-val');
+const gradForceVal = document.getElementById('grad-force-val');
+const verifyPanel = document.getElementById('verify-panel');
+const verifyStatus = document.getElementById('verify-status');
+const historyEl = document.getElementById('history');
+const messageEl = document.getElementById('message');
 const startScreen = document.getElementById('start-screen');
-const scorecardEl = document.getElementById('scorecard');
 
-// Game state
-let ball, hole, walls, obstacles, par, strokes, totalStrokes, scores;
-let currentHole = 0;
-let dragging = false;
-let dragStart = { x: 0, y: 0 };
-let dragEnd = { x: 0, y: 0 };
-let ballMoving = false;
-let holeComplete = false;
-let particles = [];
-let sandTraps = [];
-let waterHazards = [];
-
+// Physics constants
 const BALL_R = 8;
 const HOLE_R = 14;
 const FRICTION = 0.985;
 const MIN_SPEED = 0.15;
 const MAX_POWER = 18;
-const POWER_SCALE = 0.12;
+const MAX_SIM_STEPS = 2000;
 
 // Course definitions
 const courses = [
@@ -215,7 +374,7 @@ const courses = [
     sandTraps: [],
     waterHazards: [],
   },
-  { // Hole 2 - L-shape
+  { // Hole 2 - L-shape with sand
     par: 3,
     ball: { x: 150, y: 130 },
     hole: { x: 650, y: 430 },
@@ -271,24 +430,7 @@ const courses = [
     sandTraps: [{ x: 500, y: 280, r: 25 }],
     waterHazards: [],
   },
-  { // Hole 5 - Water hazard
-    par: 3,
-    ball: { x: 130, y: 280 },
-    hole: { x: 670, y: 280 },
-    walls: [
-      { x: 60, y: 180, w: 680, h: 20 },
-      { x: 60, y: 360, w: 680, h: 20 },
-      { x: 60, y: 180, w: 20, h: 200 },
-      { x: 720, y: 180, w: 20, h: 200 },
-    ],
-    obstacles: [
-      { x: 350, y: 200, w: 20, h: 60 },
-      { x: 350, y: 300, w: 20, h: 60 },
-    ],
-    sandTraps: [],
-    waterHazards: [{ x: 400, y: 270, r: 40 }],
-  },
-  { // Hole 6 - Zigzag
+  { // Hole 5 - Zigzag
     par: 4,
     ball: { x: 120, y: 100 },
     hole: { x: 680, y: 460 },
@@ -314,31 +456,7 @@ const courses = [
     sandTraps: [],
     waterHazards: [],
   },
-  { // Hole 7 - Island green
-    par: 3,
-    ball: { x: 150, y: 280 },
-    hole: { x: 580, y: 280 },
-    walls: [
-      { x: 60, y: 160, w: 680, h: 20 },
-      { x: 60, y: 380, w: 680, h: 20 },
-      { x: 60, y: 160, w: 20, h: 240 },
-      { x: 720, y: 160, w: 20, h: 240 },
-    ],
-    obstacles: [
-      { x: 480, y: 210, w: 20, h: 50 },
-      { x: 480, y: 300, w: 20, h: 50 },
-      { x: 660, y: 210, w: 20, h: 50 },
-      { x: 660, y: 300, w: 20, h: 50 },
-    ],
-    sandTraps: [
-      { x: 580, y: 220, r: 22 },
-      { x: 580, y: 340, r: 22 },
-    ],
-    waterHazards: [
-      { x: 350, y: 270, r: 50 },
-    ],
-  },
-  { // Hole 8 - Tight corridor with bumpers
+  { // Hole 6 - Tight corridor with bumpers
     par: 4,
     ball: { x: 120, y: 280 },
     hole: { x: 680, y: 280 },
@@ -360,179 +478,23 @@ const courses = [
     ],
     waterHazards: [],
   },
-  { // Hole 9 - Grand finale
-    par: 4,
-    ball: { x: 120, y: 480 },
-    hole: { x: 400, y: 80 },
-    walls: [
-      { x: 60, y: 420, w: 20, h: 120 },
-      { x: 60, y: 520, w: 340, h: 20 },
-      { x: 60, y: 420, w: 240, h: 20 },
-      { x: 280, y: 300, w: 20, h: 140 },
-      { x: 280, y: 300, w: 160, h: 20 },
-      { x: 380, y: 420, w: 20, h: 120 },
-      { x: 380, y: 520, w: 260, h: 20 },
-      { x: 420, y: 200, w: 20, h: 140 },
-      { x: 200, y: 200, w: 240, h: 20 },
-      { x: 200, y: 40, w: 20, h: 180 },
-      { x: 200, y: 40, w: 420, h: 20 },
-      { x: 600, y: 40, w: 20, h: 160 },
-      { x: 500, y: 180, w: 120, h: 20 },
-      { x: 500, y: 180, w: 20, h: 140 },
-      { x: 500, y: 300, w: 140, h: 20 },
-      { x: 620, y: 180, w: 20, h: 360 },
-    ],
-    obstacles: [
-      { x: 340, y: 100, w: 20, h: 60 },
-    ],
-    sandTraps: [{ x: 400, y: 140, r: 20 }],
-    waterHazards: [{ x: 550, y: 240, r: 30 }],
-  },
 ];
 
-function loadHole(index) {
-  const c = courses[index];
-  par = c.par;
-  ball = { x: c.ball.x, y: c.ball.y, vx: 0, vy: 0 };
-  hole = { x: c.hole.x, y: c.hole.y };
-  walls = c.walls;
-  obstacles = c.obstacles;
-  sandTraps = c.sandTraps || [];
-  waterHazards = c.waterHazards || [];
-  strokes = 0;
-  ballMoving = false;
-  holeComplete = false;
-  dragging = false;
-  particles = [];
-  holeNumEl.textContent = index + 1;
-  parNumEl.textContent = par;
-  strokeCountEl.textContent = '0';
-  messageEl.style.opacity = 0;
-  nextBtn.style.display = 'none';
-}
+// Game state
+let currentCourse = 0;
+let iteration = 0;
+let totalGradSteps = 0;
+let trajectory = [];
+let lastResult = null;
+let holeComplete = false;
+let particles = [];
+let history = [];
+let animating = false;
+let animFrame = 0;
+let animPositions = [];
 
-function startGame() {
-  currentHole = 0;
-  totalStrokes = 0;
-  scores = [];
-  startScreen.style.display = 'none';
-  scorecardEl.style.display = 'none';
-  loadHole(0);
-}
+// ========== PHYSICS ==========
 
-function showMessage(text, color = '#fff') {
-  messageEl.textContent = text;
-  messageEl.style.color = color;
-  messageEl.style.opacity = 1;
-}
-
-function spawnParticles(x, y, color, count = 20) {
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = Math.random() * 3 + 1;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 1,
-      color,
-      r: Math.random() * 3 + 1,
-    });
-  }
-}
-
-function showScorecard() {
-  let html = '<table><tr><th>Hole</th>';
-  for (let i = 0; i < 9; i++) html += `<th>${i + 1}</th>`;
-  html += '<th>Total</th></tr><tr><td class="par-cell">Par</td>';
-  let totalPar = 0;
-  for (let i = 0; i < 9; i++) { html += `<td class="par-cell">${courses[i].par}</td>`; totalPar += courses[i].par; }
-  html += `<td class="par-cell">${totalPar}</td></tr><tr><td>You</td>`;
-  for (let i = 0; i < 9; i++) {
-    const s = scores[i] || '-';
-    const p = courses[i].par;
-    let cls = 'even';
-    if (s < p) cls = 'under';
-    else if (s > p) cls = 'over';
-    html += `<td class="${cls}">${s}</td>`;
-  }
-  const diff = totalStrokes - totalPar;
-  const diffStr = diff === 0 ? 'E' : (diff > 0 ? '+' + diff : diff);
-  let cls = diff === 0 ? 'even' : (diff < 0 ? 'under' : 'over');
-  html += `<td class="${cls}">${totalStrokes} (${diffStr})</td></tr></table>`;
-  document.getElementById('scorecard-body').innerHTML = html;
-  scorecardEl.style.display = 'flex';
-}
-
-// Input handling
-let mousePos = { x: 0, y: 0 };
-
-function getCanvasPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width;
-  const scaleY = H / rect.height;
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY,
-  };
-}
-
-function onDown(e) {
-  e.preventDefault();
-  if (ballMoving || holeComplete) return;
-  const pos = getCanvasPos(e);
-  const dx = pos.x - ball.x;
-  const dy = pos.y - ball.y;
-  if (Math.sqrt(dx * dx + dy * dy) < 40) {
-    dragging = true;
-    dragStart = { x: ball.x, y: ball.y };
-    dragEnd = pos;
-  }
-}
-
-function onMove(e) {
-  e.preventDefault();
-  const pos = getCanvasPos(e);
-  mousePos = pos;
-  if (dragging) dragEnd = pos;
-}
-
-function onUp(e) {
-  e.preventDefault();
-  if (!dragging) return;
-  dragging = false;
-  const dx = dragStart.x - dragEnd.x;
-  const dy = dragStart.y - dragEnd.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < 5) return;
-  const power = Math.min(dist * POWER_SCALE, MAX_POWER);
-  const angle = Math.atan2(dy, dx);
-  ball.vx = Math.cos(angle) * power;
-  ball.vy = Math.sin(angle) * power;
-  ballMoving = true;
-  strokes++;
-  strokeCountEl.textContent = strokes;
-}
-
-canvas.addEventListener('mousedown', onDown);
-canvas.addEventListener('mousemove', onMove);
-canvas.addEventListener('mouseup', onUp);
-canvas.addEventListener('touchstart', onDown, { passive: false });
-canvas.addEventListener('touchmove', onMove, { passive: false });
-canvas.addEventListener('touchend', onUp, { passive: false });
-
-nextBtn.addEventListener('click', () => {
-  currentHole++;
-  if (currentHole >= courses.length) {
-    showScorecard();
-  } else {
-    loadHole(currentHole);
-  }
-});
-
-// Physics
 function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   const closestX = Math.max(rx, Math.min(cx, rx + rw));
   const closestY = Math.max(ry, Math.min(cy, ry + rh));
@@ -541,127 +503,203 @@ function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   return dx * dx + dy * dy < cr * cr;
 }
 
-function resolveWallCollision(b, w) {
-  // Find closest point on rect to ball
-  const closestX = Math.max(w.x, Math.min(b.x, w.x + w.w));
-  const closestY = Math.max(w.y, Math.min(b.y, w.y + w.h));
-  const dx = b.x - closestX;
-  const dy = b.y - closestY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist === 0) return;
+// Forward simulation with tape recording for backprop
+function simulate(angleDeg, force, courseIdx) {
+  const course = courses[courseIdx];
+  const angleRad = angleDeg * Math.PI / 180;
+  const tape = [];
+  const positions = [];
 
-  // Push ball out
-  const overlap = BALL_R - dist;
-  const nx = dx / dist;
-  const ny = dy / dist;
-  b.x += nx * overlap;
-  b.y += ny * overlap;
+  let x = course.ball.x;
+  let y = course.ball.y;
+  let vx = Math.cos(angleRad) * force;
+  let vy = Math.sin(angleRad) * force;
 
-  // Reflect velocity
-  const dot = b.vx * nx + b.vy * ny;
-  b.vx -= 2 * dot * nx;
-  b.vy -= 2 * dot * ny;
+  positions.push({ x, y });
 
-  // Dampen on bounce
-  b.vx *= 0.8;
-  b.vy *= 0.8;
+  let inHole = false;
+
+  for (let step = 0; step < MAX_SIM_STEPS; step++) {
+    // Sand trap friction
+    for (const s of (course.sandTraps || [])) {
+      const sdx = x - s.x;
+      const sdy = y - s.y;
+      if (sdx * sdx + sdy * sdy < s.r * s.r) {
+        vx *= 0.95;
+        vy *= 0.95;
+        tape.push({ type: 'friction', factor: 0.95 });
+      }
+    }
+
+    // Position update
+    x += vx;
+    y += vy;
+    tape.push({ type: 'pos' });
+
+    // Wall + obstacle collisions
+    const allWalls = [...(course.walls || []), ...(course.obstacles || [])];
+    for (const w of allWalls) {
+      if (circleRect(x, y, BALL_R, w.x, w.y, w.w, w.h)) {
+        const cx = Math.max(w.x, Math.min(x, w.x + w.w));
+        const cy = Math.max(w.y, Math.min(y, w.y + w.h));
+        const cdx = x - cx;
+        const cdy = y - cy;
+        const dist = Math.sqrt(cdx * cdx + cdy * cdy);
+        if (dist === 0) continue;
+        const nx = cdx / dist;
+        const ny = cdy / dist;
+
+        // Push ball out
+        const overlap = BALL_R - dist;
+        x += nx * overlap;
+        y += ny * overlap;
+
+        // Reflect velocity
+        const dot = vx * nx + vy * ny;
+        vx = (vx - 2 * dot * nx) * 0.8;
+        vy = (vy - 2 * dot * ny) * 0.8;
+
+        tape.push({ type: 'collision', nx, ny });
+      }
+    }
+
+    // Global friction
+    vx *= FRICTION;
+    vy *= FRICTION;
+    tape.push({ type: 'friction', factor: FRICTION });
+
+    positions.push({ x, y });
+
+    // Check hole
+    const hdx = x - course.hole.x;
+    const hdy = y - course.hole.y;
+    const hDist = Math.sqrt(hdx * hdx + hdy * hdy);
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    if (hDist < HOLE_R && speed < 12) {
+      x = course.hole.x;
+      y = course.hole.y;
+      inHole = true;
+      break;
+    }
+
+    // Stop condition
+    if (Math.abs(vx) < MIN_SPEED && Math.abs(vy) < MIN_SPEED) {
+      vx = 0;
+      vy = 0;
+      break;
+    }
+  }
+
+  return { finalX: x, finalY: y, tape, positions, inHole };
 }
 
-function update() {
-  if (!ballMoving) return;
+// ========== BACKPROPAGATION ==========
 
-  // Check sand trap (slow down)
-  for (const s of sandTraps) {
-    const dx = ball.x - s.x;
-    const dy = ball.y - s.y;
-    if (dx * dx + dy * dy < s.r * s.r) {
-      ball.vx *= 0.95;
-      ball.vy *= 0.95;
+function backprop(tape, finalX, finalY, holeX, holeY, angleDeg, force) {
+  // Loss = squared distance
+  const dx = finalX - holeX;
+  const dy = finalY - holeY;
+  const loss = dx * dx + dy * dy;
+
+  // Gradient of loss w.r.t. final state [x, y, vx, vy]
+  let gx = 2 * dx;
+  let gy = 2 * dy;
+  let gvx = 0;
+  let gvy = 0;
+
+  // Backprop through tape in reverse
+  for (let i = tape.length - 1; i >= 0; i--) {
+    const op = tape[i];
+    switch (op.type) {
+      case 'pos':
+        // Forward: x_new = x + vx, y_new = y + vy
+        // Backward: gvx += gx, gvy += gy (position gradients flow to velocity)
+        gvx += gx;
+        gvy += gy;
+        break;
+
+      case 'friction':
+        // Forward: vx_new = vx * f, vy_new = vy * f
+        // Backward: gvx *= f, gvy *= f
+        gvx *= op.factor;
+        gvy *= op.factor;
+        break;
+
+      case 'collision': {
+        // Forward: reflect velocity through normal (nx, ny) with 0.8 damping
+        // vx_new = (vx - 2*(vx*nx+vy*ny)*nx) * 0.8
+        //        = (vx*(1-2*nx^2) + vy*(-2*nx*ny)) * 0.8
+        // vy_new = (vx*(-2*nx*ny) + vy*(1-2*ny^2)) * 0.8
+        //
+        // Jacobian (velocity part, 0.8 damping included):
+        //   J = 0.8 * [[1-2nx^2, -2nxny], [-2nxny, 1-2ny^2]]
+        // Backward uses J^T (which equals J since J is symmetric):
+        const { nx, ny } = op;
+        const d = 0.8;
+        const a = (1 - 2 * nx * nx) * d;
+        const b = (-2 * nx * ny) * d;
+        const c = (1 - 2 * ny * ny) * d;
+        const gvx_new = gvx * a + gvy * b;
+        const gvy_new = gvx * b + gvy * c;
+        gvx = gvx_new;
+        gvy = gvy_new;
+        // Position push-out: approximate as identity
+        break;
+      }
     }
   }
 
-  ball.x += ball.vx;
-  ball.y += ball.vy;
+  // Now gvx, gvy are gradients w.r.t. initial velocity
+  // vx0 = cos(angleRad) * force, vy0 = sin(angleRad) * force
+  // Chain rule to get gradients w.r.t. angleDeg and force
+  const angleRad = angleDeg * Math.PI / 180;
+  const cosA = Math.cos(angleRad);
+  const sinA = Math.sin(angleRad);
+  const degToRad = Math.PI / 180;
 
-  // Wall collisions
-  for (const w of walls) {
-    if (circleRect(ball.x, ball.y, BALL_R, w.x, w.y, w.w, w.h)) {
-      resolveWallCollision(ball, w);
-    }
-  }
-  for (const o of obstacles) {
-    if (circleRect(ball.x, ball.y, BALL_R, o.x, o.y, o.w, o.h)) {
-      resolveWallCollision(ball, o);
-    }
-  }
+  // d(vx0)/d(angleDeg) = -sin(angleRad) * force * (pi/180)
+  // d(vy0)/d(angleDeg) =  cos(angleRad) * force * (pi/180)
+  const grad_angle = gvx * (-sinA * force * degToRad) + gvy * (cosA * force * degToRad);
 
-  // Water hazard (reset ball)
-  for (const wh of waterHazards) {
-    const dx = ball.x - wh.x;
-    const dy = ball.y - wh.y;
-    if (dx * dx + dy * dy < (wh.r - 4) * (wh.r - 4)) {
-      spawnParticles(ball.x, ball.y, '#4fc3f7', 15);
-      const c = courses[currentHole];
-      ball.x = c.ball.x;
-      ball.y = c.ball.y;
-      ball.vx = 0;
-      ball.vy = 0;
-      ballMoving = false;
-      strokes++;
-      strokeCountEl.textContent = strokes;
-      showMessage('Water! +1 stroke', '#4fc3f7');
-      setTimeout(() => { messageEl.style.opacity = 0; }, 1500);
-      return;
-    }
-  }
+  // d(vx0)/d(force) = cos(angleRad)
+  // d(vy0)/d(force) = sin(angleRad)
+  const grad_force = gvx * cosA + gvy * sinA;
 
-  // Friction
-  ball.vx *= FRICTION;
-  ball.vy *= FRICTION;
-
-  // Stop
-  if (Math.abs(ball.vx) < MIN_SPEED && Math.abs(ball.vy) < MIN_SPEED) {
-    ball.vx = 0;
-    ball.vy = 0;
-    ballMoving = false;
-  }
-
-  // Check hole
-  const hdx = ball.x - hole.x;
-  const hdy = ball.y - hole.y;
-  const hDist = Math.sqrt(hdx * hdx + hdy * hdy);
-  const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-  if (hDist < HOLE_R && speed < 12) {
-    ball.x = hole.x;
-    ball.y = hole.y;
-    ball.vx = 0;
-    ball.vy = 0;
-    ballMoving = false;
-    holeComplete = true;
-    scores.push(strokes);
-    totalStrokes += strokes;
-
-    const diff = strokes - par;
-    const names = { '-3': 'Albatross!', '-2': 'Eagle!', '-1': 'Birdie!', '0': 'Par!', '1': 'Bogey', '2': 'Double Bogey' };
-    if (strokes === 1) {
-      showMessage('Hole in One!!!', '#ffd700');
-      spawnParticles(hole.x, hole.y, '#ffd700', 50);
-    } else {
-      showMessage(names[diff] || (diff < 0 ? 'Amazing!' : `+${diff}`), diff <= 0 ? '#4caf50' : '#f44336');
-      spawnParticles(hole.x, hole.y, diff <= 0 ? '#4caf50' : '#ffd700', 30);
-    }
-
-    setTimeout(() => { nextBtn.style.display = 'block'; }, 1000);
-  }
+  return { loss, grad_angle, grad_force };
 }
 
-// Rendering
-function drawCourse() {
+// ========== NUMERICAL GRADIENT (for verification) ==========
+
+function computeLoss(simResult, holeX, holeY) {
+  if (simResult.inHole) return 0;
+  const dx = simResult.finalX - holeX;
+  const dy = simResult.finalY - holeY;
+  return dx * dx + dy * dy;
+}
+
+function numericalGradient(angleDeg, force, courseIdx, eps = 1e-4) {
+  const course = courses[courseIdx];
+  const hx = course.hole.x, hy = course.hole.y;
+
+  const lossAP = computeLoss(simulate(angleDeg + eps, force, courseIdx), hx, hy);
+  const lossAM = computeLoss(simulate(angleDeg - eps, force, courseIdx), hx, hy);
+  const numGradAngle = (lossAP - lossAM) / (2 * eps);
+
+  const lossFP = computeLoss(simulate(angleDeg, force + eps, courseIdx), hx, hy);
+  const lossFM = computeLoss(simulate(angleDeg, force - eps, courseIdx), hx, hy);
+  const numGradForce = (lossFP - lossFM) / (2 * eps);
+
+  return { numGradAngle, numGradForce };
+}
+
+// ========== RENDERING ==========
+
+function drawCourse(courseIdx) {
+  const course = courses[courseIdx];
+
   // Background grass
   ctx.fillStyle = '#2e7d32';
   ctx.fillRect(0, 0, W, H);
-
-  // Subtle grass pattern
   ctx.fillStyle = '#2b7230';
   for (let x = 0; x < W; x += 20) {
     for (let y = 0; y < H; y += 20) {
@@ -669,13 +707,8 @@ function drawCourse() {
     }
   }
 
-  // Fairway (lighter area within walls)
-  ctx.fillStyle = '#388e3c';
-  // We'll just draw the course outline filled
-  const allWalls = [...walls, ...obstacles];
-
   // Sand traps
-  for (const s of sandTraps) {
+  for (const s of (course.sandTraps || [])) {
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fillStyle = '#e8c86a';
@@ -685,29 +718,8 @@ function drawCourse() {
     ctx.stroke();
   }
 
-  // Water hazards
-  for (const w of waterHazards) {
-    ctx.beginPath();
-    ctx.arc(w.x, w.y, w.r, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(w.x, w.y, 0, w.x, w.y, w.r);
-    grad.addColorStop(0, '#29b6f6');
-    grad.addColorStop(1, '#0288d1');
-    ctx.fillStyle = grad;
-    ctx.fill();
-    // Animated ripples
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    const t = Date.now() / 1000;
-    for (let i = 0; i < 3; i++) {
-      const r = ((t * 15 + i * 12) % w.r);
-      ctx.beginPath();
-      ctx.arc(w.x, w.y, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  }
-
   // Walls
-  for (const w of walls) {
+  for (const w of (course.walls || [])) {
     ctx.fillStyle = '#5d4037';
     ctx.fillRect(w.x, w.y, w.w, w.h);
     ctx.fillStyle = '#6d4c41';
@@ -715,7 +727,7 @@ function drawCourse() {
   }
 
   // Obstacles
-  for (const o of obstacles) {
+  for (const o of (course.obstacles || [])) {
     ctx.fillStyle = '#795548';
     ctx.fillRect(o.x, o.y, o.w, o.h);
     ctx.fillStyle = '#8d6e63';
@@ -724,80 +736,126 @@ function drawCourse() {
 
   // Hole
   ctx.beginPath();
-  ctx.arc(hole.x, hole.y, HOLE_R + 4, 0, Math.PI * 2);
+  ctx.arc(course.hole.x, course.hole.y, HOLE_R + 4, 0, Math.PI * 2);
   ctx.fillStyle = '#66bb6a';
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(hole.x, hole.y, HOLE_R, 0, Math.PI * 2);
+  ctx.arc(course.hole.x, course.hole.y, HOLE_R, 0, Math.PI * 2);
   ctx.fillStyle = '#111';
   ctx.fill();
 
   // Flag
   if (!holeComplete) {
     ctx.beginPath();
-    ctx.moveTo(hole.x, hole.y - 4);
-    ctx.lineTo(hole.x, hole.y - 40);
+    ctx.moveTo(course.hole.x, course.hole.y - 4);
+    ctx.lineTo(course.hole.x, course.hole.y - 40);
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(hole.x, hole.y - 40);
-    ctx.lineTo(hole.x + 20, hole.y - 33);
-    ctx.lineTo(hole.x, hole.y - 26);
+    ctx.moveTo(course.hole.x, course.hole.y - 40);
+    ctx.lineTo(course.hole.x + 20, course.hole.y - 33);
+    ctx.lineTo(course.hole.x, course.hole.y - 26);
     ctx.fillStyle = '#f44336';
     ctx.fill();
   }
 }
 
-function drawBall() {
+function drawBallAt(x, y, alpha = 1) {
+  ctx.globalAlpha = alpha;
   // Shadow
   ctx.beginPath();
-  ctx.arc(ball.x + 2, ball.y + 2, BALL_R, 0, Math.PI * 2);
+  ctx.arc(x + 2, y + 2, BALL_R, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fill();
-
   // Ball
-  const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_R);
+  const grad = ctx.createRadialGradient(x - 2, y - 2, 1, x, y, BALL_R);
   grad.addColorStop(0, '#ffffff');
   grad.addColorStop(1, '#cccccc');
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+  ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
   ctx.fillStyle = grad;
   ctx.fill();
   ctx.strokeStyle = '#aaa';
   ctx.lineWidth = 0.5;
   ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
-function drawAimLine() {
-  if (!dragging) return;
-  const dx = dragStart.x - dragEnd.x;
-  const dy = dragStart.y - dragEnd.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const power = Math.min(dist * POWER_SCALE, MAX_POWER);
-  const ratio = power / MAX_POWER;
+function drawDirectionArrow(x, y, angleDeg, force) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const len = 20 + (force / MAX_POWER) * 60;
+  const ex = x + Math.cos(angleRad) * len;
+  const ey = y + Math.sin(angleRad) * len;
 
-  // Direction line (dotted)
-  const angle = Math.atan2(dy, dx);
-  const lineLen = 30 + ratio * 80;
+  // Arrow line
   ctx.beginPath();
-  ctx.setLineDash([6, 6]);
-  ctx.moveTo(ball.x, ball.y);
-  ctx.lineTo(ball.x + Math.cos(angle) * lineLen, ball.y + Math.sin(angle) * lineLen);
-  ctx.strokeStyle = `rgba(255,255,255,${0.4 + ratio * 0.4})`;
+  ctx.setLineDash([5, 5]);
+  ctx.moveTo(x, y);
+  ctx.lineTo(ex, ey);
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Power indicator
-  const barX = ball.x - 25;
-  const barY = ball.y - 25;
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.fillRect(barX, barY, 50, 6);
-  const r = Math.floor(255 * ratio);
-  const g = Math.floor(255 * (1 - ratio));
-  ctx.fillStyle = `rgb(${r},${g},0)`;
-  ctx.fillRect(barX, barY, 50 * ratio, 6);
+  // Arrow head
+  const headLen = 8;
+  const headAngle = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex - headLen * Math.cos(angleRad - headAngle), ey - headLen * Math.sin(angleRad - headAngle));
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex - headLen * Math.cos(angleRad + headAngle), ey - headLen * Math.sin(angleRad + headAngle));
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Power label
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '11px Courier New';
+  ctx.fillText(`${force.toFixed(1)}`, ex + 8, ey + 4);
+}
+
+function drawTrajectory(positions, maxIdx) {
+  if (positions.length < 2) return;
+  const n = maxIdx != null ? Math.min(maxIdx, positions.length) : positions.length;
+  if (n < 2) return;
+
+  ctx.beginPath();
+  ctx.moveTo(positions[0].x, positions[0].y);
+  for (let i = 1; i < n; i++) {
+    ctx.lineTo(positions[i].x, positions[i].y);
+  }
+  ctx.strokeStyle = 'rgba(100,180,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw dots at intervals
+  for (let i = 0; i < n; i += 10) {
+    ctx.beginPath();
+    ctx.arc(positions[i].x, positions[i].y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(100,180,255,0.6)';
+    ctx.fill();
+  }
+}
+
+function drawLossLine(fx, fy, hx, hy) {
+  ctx.beginPath();
+  ctx.setLineDash([4, 4]);
+  ctx.moveTo(fx, fy);
+  ctx.lineTo(hx, hy);
+  ctx.strokeStyle = 'rgba(255,100,100,0.7)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Distance label
+  const dist = Math.sqrt((fx - hx) ** 2 + (fy - hy) ** 2);
+  const mx = (fx + hx) / 2;
+  const my = (fy + hy) / 2;
+  ctx.fillStyle = '#ff6b6b';
+  ctx.font = 'bold 12px Courier New';
+  ctx.fillText(`${dist.toFixed(1)}px`, mx + 6, my - 6);
 }
 
 function drawParticles() {
@@ -817,22 +875,300 @@ function drawParticles() {
   }
 }
 
+function spawnParticles(x, y, color, count = 20) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 3 + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      color,
+      r: Math.random() * 3 + 1,
+    });
+  }
+}
+
+// ========== MAIN RENDER ==========
+
 function render() {
   ctx.clearRect(0, 0, W, H);
-  drawCourse();
-  if (!holeComplete) drawBall();
-  drawAimLine();
+  const course = courses[currentCourse];
+
+  drawCourse(currentCourse);
+
+  // Draw trajectory (animated or full)
+  if (animating && animPositions.length > 0) {
+    drawTrajectory(animPositions, animFrame);
+    // Draw ball at current animation position
+    const idx = Math.min(animFrame, animPositions.length - 1);
+    if (!holeComplete || idx < animPositions.length - 1) {
+      drawBallAt(animPositions[idx].x, animPositions[idx].y);
+    }
+  } else if (trajectory.length > 0) {
+    // Show full trajectory
+    drawTrajectory(trajectory);
+    // Draw final ball position (ghost)
+    if (lastResult && !lastResult.inHole) {
+      drawBallAt(lastResult.finalX, lastResult.finalY, 0.6);
+      drawLossLine(lastResult.finalX, lastResult.finalY, course.hole.x, course.hole.y);
+    }
+  }
+
+  // Draw ball at start position (if not animating or before first shot)
+  if (!animating) {
+    if (!holeComplete) {
+      drawBallAt(course.ball.x, course.ball.y);
+    }
+    // Draw direction arrow
+    const angleDeg = parseFloat(angleInput.value) || 0;
+    const force = parseFloat(forceInput.value) || 1;
+    if (!holeComplete) {
+      drawDirectionArrow(course.ball.x, course.ball.y, angleDeg, force);
+    }
+  }
+
   drawParticles();
+  requestAnimationFrame(render);
 }
 
-function gameLoop() {
-  update();
-  render();
-  requestAnimationFrame(gameLoop);
+// ========== GAME LOGIC ==========
+
+function loadHole(idx) {
+  currentCourse = idx;
+  const course = courses[idx];
+  iteration = 0;
+  holeComplete = false;
+  trajectory = [];
+  lastResult = null;
+  particles = [];
+  history = [];
+  animating = false;
+  animPositions = [];
+
+  holeNumEl.textContent = idx + 1;
+  holeTotalEl.textContent = courses.length;
+  parNumEl.textContent = course.par;
+  iterNumEl.textContent = '0';
+
+  // Initial guess: direct angle to hole with some offset
+  const directAngle = Math.atan2(
+    course.hole.y - course.ball.y,
+    course.hole.x - course.ball.x
+  ) * 180 / Math.PI;
+  const offset = (Math.random() - 0.5) * 60; // +/-30 deg offset
+  angleInput.value = (directAngle + offset).toFixed(1);
+  forceInput.value = (5 + Math.random() * 6).toFixed(1); // 5-11
+
+  resultsPanel.style.display = 'none';
+  historyEl.style.display = 'none';
+  nextBtn.style.display = 'none';
+  verifyPanel.style.display = 'none';
+  verifyStatus.textContent = '';
 }
+
+function startGame() {
+  startScreen.style.display = 'none';
+  totalGradSteps = 0;
+  totalStepsEl.textContent = '0';
+  loadHole(0);
+}
+
+function shoot() {
+  if (holeComplete || animating) return;
+
+  const angleDeg = parseFloat(angleInput.value);
+  const force = Math.max(0.5, Math.min(MAX_POWER, parseFloat(forceInput.value)));
+  forceInput.value = force.toFixed(1);
+
+  if (isNaN(angleDeg) || isNaN(force)) return;
+
+  // Run simulation
+  const course = courses[currentCourse];
+  const simResult = simulate(angleDeg, force, currentCourse);
+
+  // Run backpropagation
+  const bpResult = backprop(
+    simResult.tape, simResult.finalX, simResult.finalY,
+    course.hole.x, course.hole.y, angleDeg, force
+  );
+
+  iteration++;
+  totalGradSteps++;
+  iterNumEl.textContent = iteration;
+  totalStepsEl.textContent = totalGradSteps;
+
+  lastResult = simResult;
+  trajectory = simResult.positions;
+
+  // Animate trajectory
+  animPositions = simResult.positions;
+  animFrame = 0;
+  animating = true;
+
+  const animSpeed = Math.max(2, Math.floor(simResult.positions.length / 60)); // ~1 second animation
+  const animInterval = setInterval(() => {
+    animFrame += animSpeed;
+    if (animFrame >= animPositions.length) {
+      animFrame = animPositions.length;
+      animating = false;
+      clearInterval(animInterval);
+
+      // Show results after animation
+      showResults(angleDeg, force, bpResult, simResult);
+    }
+  }, 16);
+}
+
+function showResults(angleDeg, force, bpResult, simResult) {
+  const dist = Math.sqrt(bpResult.loss);
+
+  resultsPanel.style.display = 'block';
+  historyEl.style.display = 'block';
+
+  if (simResult.inHole) {
+    lossVal.textContent = '0';
+    lossVal.className = 'result-value good';
+    distVal.textContent = 'IN THE HOLE!';
+    distVal.className = 'result-value good';
+    gradAngleVal.textContent = '0';
+    gradForceVal.textContent = '0';
+
+    holeComplete = true;
+    nextBtn.style.display = currentCourse < courses.length - 1 ? 'inline-block' : 'none';
+    spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#ffd700', 40);
+    showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#ffd700');
+  } else {
+    lossVal.textContent = bpResult.loss.toFixed(1);
+    lossVal.className = 'result-value loss';
+    distVal.textContent = dist.toFixed(1) + ' px';
+    distVal.className = 'result-value dist';
+    gradAngleVal.textContent = formatGrad(bpResult.grad_angle);
+    gradForceVal.textContent = formatGrad(bpResult.grad_force);
+  }
+
+  // Update history
+  const entry = document.createElement('div');
+  if (simResult.inHole) {
+    entry.innerHTML = `<span class="latest">#${iteration}: angle=${angleDeg.toFixed(1)} force=${force.toFixed(1)} IN HOLE!</span>`;
+  } else {
+    entry.innerHTML = `#${iteration}: angle=${angleDeg.toFixed(1)} force=${force.toFixed(1)} loss=${bpResult.loss.toFixed(0)} dist=${dist.toFixed(1)}`;
+  }
+  // Mark the latest entry
+  const prev = historyEl.querySelector('.latest');
+  if (prev) prev.classList.remove('latest');
+  entry.classList.add('latest');
+  historyEl.appendChild(entry);
+  historyEl.scrollTop = historyEl.scrollHeight;
+
+  // Clear verify panel on new shot
+  verifyPanel.style.display = 'none';
+  verifyStatus.textContent = '';
+
+  // Store for gradient application
+  lastResult.angleDeg = angleDeg;
+  lastResult.force = force;
+  lastResult.grad_angle = bpResult.grad_angle;
+  lastResult.grad_force = bpResult.grad_force;
+}
+
+function formatGrad(val) {
+  if (Math.abs(val) < 0.01) return '~0';
+  if (Math.abs(val) > 1e6) return val.toExponential(2);
+  if (Math.abs(val) > 100) return val.toFixed(0);
+  return val.toFixed(2);
+}
+
+function applyGradient() {
+  if (!lastResult || holeComplete || animating) return;
+
+  const lr = parseFloat(lrInput.value) || 0.001;
+  const newAngle = lastResult.angleDeg - lr * lastResult.grad_angle;
+  const newForce = Math.max(0.5, Math.min(MAX_POWER,
+    lastResult.force - lr * lastResult.grad_force
+  ));
+
+  angleInput.value = newAngle.toFixed(1);
+  forceInput.value = newForce.toFixed(1);
+}
+
+function verifyGradient() {
+  if (!lastResult || holeComplete) return;
+
+  const angleDeg = lastResult.angleDeg;
+  const force = lastResult.force;
+  const course = courses[currentCourse];
+
+  const numGrad = numericalGradient(angleDeg, force, currentCourse);
+  const anaGradAngle = lastResult.grad_angle;
+  const anaGradForce = lastResult.grad_force;
+
+  // Relative error
+  const errAngle = Math.abs(anaGradAngle - numGrad.numGradAngle) /
+    (Math.max(Math.abs(anaGradAngle), Math.abs(numGrad.numGradAngle)) + 1e-8);
+  const errForce = Math.abs(anaGradForce - numGrad.numGradForce) /
+    (Math.max(Math.abs(anaGradForce), Math.abs(numGrad.numGradForce)) + 1e-8);
+
+  const match = errAngle < 0.05 && errForce < 0.05;
+
+  verifyPanel.style.display = 'block';
+  verifyPanel.innerHTML = `
+    <div style="margin-bottom:4px; color:${match ? '#4caf50' : '#ff9800'}; font-weight:bold">
+      ${match ? 'Gradients match!' : 'Gradients differ (expected near collision boundaries)'}
+    </div>
+    <table style="font-size:12px; color:#aaa;">
+      <tr><td></td><td style="padding:0 10px">Backprop</td><td style="padding:0 10px">Finite Diff</td><td style="padding:0 10px">Rel Error</td></tr>
+      <tr>
+        <td>dL/d(angle)</td>
+        <td style="padding:0 10px">${anaGradAngle.toFixed(4)}</td>
+        <td style="padding:0 10px">${numGrad.numGradAngle.toFixed(4)}</td>
+        <td style="padding:0 10px; color:${errAngle < 0.05 ? '#4caf50' : '#ff9800'}">${(errAngle * 100).toFixed(2)}%</td>
+      </tr>
+      <tr>
+        <td>dL/d(force)</td>
+        <td style="padding:0 10px">${anaGradForce.toFixed(4)}</td>
+        <td style="padding:0 10px">${numGrad.numGradForce.toFixed(4)}</td>
+        <td style="padding:0 10px; color:${errForce < 0.05 ? '#4caf50' : '#ff9800'}">${(errForce * 100).toFixed(2)}%</td>
+      </tr>
+    </table>
+  `;
+
+  verifyStatus.textContent = match ? 'Verified!' : 'See details';
+  verifyStatus.style.color = match ? '#4caf50' : '#ff9800';
+}
+
+function showMessage(text, color = '#fff') {
+  messageEl.textContent = text;
+  messageEl.style.color = color;
+  messageEl.style.opacity = 1;
+  setTimeout(() => { messageEl.style.opacity = 0; }, 2000);
+}
+
+// ========== EVENT HANDLERS ==========
+
+shootBtn.addEventListener('click', shoot);
+applyBtn.addEventListener('click', () => {
+  applyGradient();
+});
+nextBtn.addEventListener('click', () => {
+  if (currentCourse < courses.length - 1) {
+    loadHole(currentCourse + 1);
+  }
+});
+verifyBtn.addEventListener('click', verifyGradient);
+
+// Enter to shoot from inputs
+[angleInput, forceInput].forEach(input => {
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') shoot();
+  });
+});
+
+// ========== INIT ==========
 
 loadHole(0);
-gameLoop();
+render();
 </script>
 </body>
 </html>
