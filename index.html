@@ -107,6 +107,14 @@ button:hover {
 button:active {
   background: #ddd;
 }
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:disabled:hover {
+  background: #f8f8f8;
+  border-color: #ccc;
+}
 #shoot-btn {
   background: #0181eb;
   color: #f8f8f8;
@@ -309,7 +317,7 @@ a:hover {
   }
   .control-group { min-width: 0; }
   .control-group input[type="number"] { width: 100%; min-width: 0; }
-  #shoot-btn, #apply-btn, #auto-btn, #next-btn {
+  #shoot-btn, #apply-btn, #auto-btn, #reset-btn, #next-btn {
     grid-column: 1 / -1;
     width: 100%;
     font-size: 1em;
@@ -360,6 +368,7 @@ a:hover {
       </div>
       <button id="apply-btn">Apply Gradient</button>
       <button id="auto-btn">Auto GD</button>
+      <button id="reset-btn">Reset</button>
       <button id="next-btn">Next Hole</button>
       <button id="fs-btn" title="Fullscreen">&#x26F6;</button>
     </div>
@@ -426,6 +435,7 @@ const lrInput = document.getElementById('lr-input');
 const shootBtn = document.getElementById('shoot-btn');
 const applyBtn = document.getElementById('apply-btn');
 const autoBtn = document.getElementById('auto-btn');
+const resetBtn = document.getElementById('reset-btn');
 const nextBtn = document.getElementById('next-btn');
 const verifyBtn = document.getElementById('verify-btn');
 const resultsPanel = document.getElementById('results-panel');
@@ -1136,7 +1146,8 @@ function showResults(angleDeg, force, bpResult, simResult) {
     gradForceVal.textContent = '0';
 
     holeComplete = true;
-    nextBtn.style.display = currentCourse < courses.length - 1 ? 'inline-block' : 'none';
+    nextBtn.style.display = 'inline-block';
+    nextBtn.disabled = currentCourse >= courses.length - 1;
     spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#0181eb', 40);
     showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#0181eb');
   } else {
@@ -1363,6 +1374,7 @@ function showMessage(text, color = '#222') {
 shootBtn.addEventListener('click', () => shoot());
 applyBtn.addEventListener('click', () => applyGradient());
 autoBtn.addEventListener('click', toggleAutoGD);
+resetBtn.addEventListener('click', () => loadHole(currentCourse));
 document.getElementById('fs-btn').addEventListener('click', () => {
   if (document.fullscreenElement) {
     document.exitFullscreen();
