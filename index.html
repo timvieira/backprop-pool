@@ -128,10 +128,10 @@ h1 {
   width: 26px;
   height: 26px;
   min-height: 26px;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(0,0,0,0.2);
   border-radius: 3px;
-  background: rgba(255,255,255,0.9);
-  color: #555;
+  background: rgba(255,255,255,0.3);
+  color: #444;
   font-size: 15px;
   font-weight: 700;
   font-family: Menlo, Monaco, monospace;
@@ -142,8 +142,8 @@ h1 {
   padding: 0;
   line-height: 1;
 }
-.hud-pm:hover { background: #eee; }
-.hud-pm:active { background: #ddd; }
+.hud-pm:hover { background: rgba(255,255,255,0.5); }
+.hud-pm:active { background: rgba(255,255,255,0.6); }
 .hud-grad-hint {
   font-size: 9px;
   color: #506888;
@@ -159,21 +159,21 @@ h1 {
 .hud-btn {
   padding: 4px 12px;
   min-height: 26px;
-  border: 1px solid #aaa;
+  border: 1px solid rgba(0,0,0,0.2);
   border-radius: 3px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.3);
   color: #444;
   font-size: 11px;
   font-weight: 700;
   font-family: Menlo, Monaco, monospace;
   cursor: pointer;
 }
-.hud-btn:hover { background: #eee; }
-.hud-btn:active { background: #ddd; }
-.hud-btn.primary { background: #555; color: #f8f8f8; border-color: #555; }
-.hud-btn.primary:hover { background: #444; }
+.hud-btn:hover { background: rgba(255,255,255,0.5); }
+.hud-btn:active { background: rgba(255,255,255,0.6); }
+.hud-btn.primary { background: rgba(80,80,80,0.7); color: #f8f8f8; border-color: rgba(0,0,0,0.3); }
+.hud-btn.primary:hover { background: rgba(60,60,60,0.8); }
 .hud-btn:disabled { opacity: 0.35; cursor: default; }
-.hud-btn:disabled:hover { background: rgba(255,255,255,0.9); }
+.hud-btn:disabled:hover { background: rgba(255,255,255,0.3); }
 
 /* === Below-canvas controls === */
 #controls {
