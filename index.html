@@ -463,7 +463,7 @@ a:hover { color: #555; }
   <div id="help-overlay" style="display:none;">
     <div id="help-content">
       <h2>Backprop Golf</h2>
-      <p>Learn <strong>gradient descent</strong> by playing mini golf. Adjust angle and force, then shoot. <strong>Backpropagation</strong> asks: if the final miss had been a bit smaller, what tiny changes earlier in the trajectory would have caused that? It works backward from the end, computing the gradient of the loss with respect to your parameters. Use the gradient to improve your shot.</p>
+      <p>Learn <strong>gradient descent</strong> by playing mini golf. Adjust angle and force, then shoot. <strong>Backpropagation</strong> asks: if the final miss had been a bit smaller, what tiny changes earlier in the trajectory would have caused that? It works backward from the end, computing the gradient of the loss with respect to your parameters.</p>
 
       <h3>How to play</h3>
       <ol>
@@ -471,15 +471,21 @@ a:hover { color: #555; }
         <li>Press <strong>Shoot</strong> to fire the ball</li>
         <li>Read the gradients (&nabla;) next to each parameter &mdash; they tell you which direction reduces the loss</li>
         <li>Press <strong>Grad</strong> to apply one gradient step, or tweak manually</li>
-        <li>Repeat until the ball goes in!</li>
+        <li>Repeat &mdash; but watch out for when the gradient gets stuck!</li>
       </ol>
+
+      <h3>Limitations to discover</h3>
+      <p>Gradient descent finds <strong>local</strong> optima, not necessarily the global best. On harder levels, following the gradient may converge to a shot that&rsquo;s &ldquo;locally optimal&rdquo; but doesn&rsquo;t reach the hole. Try <strong>Reset</strong> to start from a different initial guess.</p>
+      <p>The loss landscape is also <strong>piecewise differentiable</strong>: wall collisions are discrete events, so small parameter changes can cause the ball to hit or miss a wall entirely. Near these boundaries, the gradient may not reflect the true landscape. This is analogous to ReLU in neural networks &mdash; backprop differentiates through whichever branch was actually taken.</p>
 
       <h3>What the HUD shows</h3>
       <table>
         <tr><td><strong>loss</strong></td><td>Squared distance from ball's resting position to hole</td></tr>
         <tr><td><strong>dist</strong></td><td>Distance in pixels</td></tr>
         <tr><td><strong>&nabla;</strong> values</td><td>Gradient of loss w.r.t. each parameter (computed by backprop through the physics)</td></tr>
-        <tr><td><strong>loss curve</strong></td><td>Loss over iterations &mdash; should decrease!</td></tr>
+        <tr><td><strong>Adj</strong></td><td>Adjoint arrows along trajectory &mdash; &ldquo;what nudges at each point would have helped?&rdquo;</td></tr>
+        <tr><td><strong>loss curve</strong></td><td>Loss over iterations &mdash; watch for plateaus (local optima!)</td></tr>
+        <tr><td><strong>contour plot</strong></td><td>Loss landscape over all (angle, force) pairs &mdash; reveals the global structure the gradient can&rsquo;t see</td></tr>
       </table>
 
       <h3>Keyboard shortcuts</h3>
@@ -536,7 +542,8 @@ a:hover { color: #555; }
     Choose an angle and force to hit the ball.
     After each shot, <strong>backpropagation</strong> asks: if the final miss had been a bit smaller, what tiny changes to the initial shot would have caused that?
     It works backward through the trajectory to compute the gradient.
-    Use it to make small adjustments &mdash; this is <strong>gradient descent</strong>!
+    Following the gradient improves your shot locally &mdash; but it won&rsquo;t always find the best solution.
+    Can you tell when it gets stuck?
   </p>
   <button onclick="startGame()">Play</button>
 </div>
