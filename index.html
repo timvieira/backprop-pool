@@ -1527,6 +1527,9 @@ verifyBtn.addEventListener('click', verifyGradient);
 
 // Global keyboard shortcuts
 document.addEventListener('keydown', (e) => {
+  // Don't capture when typing in an input
+  if (e.target.tagName === 'INPUT') return;
+
   // Dismiss start screen
   if (startScreen.style.display !== 'none') {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
@@ -1534,6 +1537,46 @@ document.addEventListener('keydown', (e) => {
       startGame();
     }
     return;
+  }
+
+  switch (e.key) {
+    case ' ':
+    case 'Enter':
+      e.preventDefault();
+      shoot();
+      break;
+    case 'o':
+      toggleAutoGD();
+      break;
+    case 'g':
+      applyGradient();
+      break;
+    case 'r':
+      loadHole(currentCourse);
+      break;
+    case 'n':
+      if (currentCourse < courses.length - 1) loadHole(currentCourse + 1);
+      break;
+    case 'f':
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      adjustAngle(-ANGLE_STEP);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      adjustAngle(ANGLE_STEP);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      adjustForce(FORCE_STEP);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      adjustForce(-FORCE_STEP);
+      break;
   }
 });
 
