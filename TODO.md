@@ -13,6 +13,8 @@
 
 - [ ] **3D extensions** — Consider extending the game to 3D (e.g., ramps, elevation changes, 3D ball physics) for a richer teaching environment.
 
+- [ ] **Curriculum design** — Think carefully about the progression of levels and what each one teaches. E.g., level 1: straight shot (basic gradient descent), level 2: angle matters (2D optimization), level 3: wall bounce (differentiating through collisions), level 4: multiple bounces (long chain rule), later levels: sand/ice (different friction = different gradients), obstacles requiring bank shots (local minima, non-convexity). Each level should introduce one new concept.
+
 - [ ] **Sqrt loss display** — Consider showing sqrt(loss) (distance in pixels) instead of squared distance for the loss curve and contour plot, to keep units intuitive.
 
 ## Done
