@@ -839,14 +839,14 @@ function drawCourse(courseIdx) {
     ctx.beginPath();
     ctx.moveTo(course.hole.x, course.hole.y - 4);
     ctx.lineTo(course.hole.x, course.hole.y - 40);
-    ctx.strokeStyle = '#eee';
+    ctx.strokeStyle = '#555';
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(course.hole.x, course.hole.y - 40);
     ctx.lineTo(course.hole.x + 20, course.hole.y - 33);
     ctx.lineTo(course.hole.x, course.hole.y - 26);
-    ctx.fillStyle = '#f44336';
+    ctx.fillStyle = '#c62828';
     ctx.fill();
   }
 }
@@ -883,7 +883,7 @@ function drawDirectionArrow(x, y, angleDeg, force) {
   ctx.setLineDash([5, 5]);
   ctx.moveTo(x, y);
   ctx.lineTo(ex, ey);
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
@@ -896,13 +896,13 @@ function drawDirectionArrow(x, y, angleDeg, force) {
   ctx.lineTo(ex - headLen * Math.cos(angleRad - headAngle), ey - headLen * Math.sin(angleRad - headAngle));
   ctx.moveTo(ex, ey);
   ctx.lineTo(ex - headLen * Math.cos(angleRad + headAngle), ey - headLen * Math.sin(angleRad + headAngle));
-  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // Power label
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.font = '11px Courier New';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.font = '11px Menlo, Monaco, monospace';
   ctx.fillText(`${force.toFixed(1)}`, ex + 8, ey + 4);
 }
 
@@ -916,7 +916,7 @@ function drawTrajectory(positions, maxIdx) {
   for (let i = 1; i < n; i++) {
     ctx.lineTo(positions[i].x, positions[i].y);
   }
-  ctx.strokeStyle = 'rgba(100,180,255,0.5)';
+  ctx.strokeStyle = 'rgba(1,129,235,0.45)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -924,7 +924,7 @@ function drawTrajectory(positions, maxIdx) {
   for (let i = 0; i < n; i += 10) {
     ctx.beginPath();
     ctx.arc(positions[i].x, positions[i].y, 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(100,180,255,0.6)';
+    ctx.fillStyle = 'rgba(1,129,235,0.55)';
     ctx.fill();
   }
 }
@@ -934,7 +934,7 @@ function drawLossLine(fx, fy, hx, hy) {
   ctx.setLineDash([4, 4]);
   ctx.moveTo(fx, fy);
   ctx.lineTo(hx, hy);
-  ctx.strokeStyle = 'rgba(255,100,100,0.7)';
+  ctx.strokeStyle = 'rgba(198,40,40,0.6)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
@@ -943,8 +943,8 @@ function drawLossLine(fx, fy, hx, hy) {
   const dist = Math.sqrt((fx - hx) ** 2 + (fy - hy) ** 2);
   const mx = (fx + hx) / 2;
   const my = (fy + hy) / 2;
-  ctx.fillStyle = '#ff6b6b';
-  ctx.font = 'bold 12px Courier New';
+  ctx.fillStyle = '#c62828';
+  ctx.font = 'bold 12px Menlo, Monaco, monospace';
   ctx.fillText(`${dist.toFixed(1)}px`, mx + 6, my - 6);
 }
 
@@ -1136,8 +1136,8 @@ function showResults(angleDeg, force, bpResult, simResult) {
 
     holeComplete = true;
     nextBtn.style.display = currentCourse < courses.length - 1 ? 'inline-block' : 'none';
-    spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#ffd700', 40);
-    showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#ffd700');
+    spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#0181eb', 40);
+    showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#0181eb');
   } else {
     lossVal.textContent = bpResult.loss.toFixed(1);
     lossVal.className = 'result-value loss';
@@ -1265,7 +1265,7 @@ function verifyGradient() {
 
   verifyPanel.style.display = 'block';
   verifyPanel.innerHTML = `
-    <div style="margin-bottom:4px; color:${match ? '#4caf50' : '#ff9800'}; font-weight:bold">
+    <div style="margin-bottom:4px; color:${match ? '#2e7d32' : '#e65100'}; font-weight:bold">
       ${match ? 'Gradients match!' : 'Gradients differ (expected near collision boundaries)'}
     </div>
     <table style="font-size:12px; color:#aaa;">
@@ -1274,19 +1274,19 @@ function verifyGradient() {
         <td>dL/d(angle)</td>
         <td style="padding:0 10px">${anaGradAngle.toFixed(4)}</td>
         <td style="padding:0 10px">${numGrad.numGradAngle.toFixed(4)}</td>
-        <td style="padding:0 10px; color:${errAngle < 0.05 ? '#4caf50' : '#ff9800'}">${(errAngle * 100).toFixed(2)}%</td>
+        <td style="padding:0 10px; color:${errAngle < 0.05 ? '#2e7d32' : '#e65100'}">${(errAngle * 100).toFixed(2)}%</td>
       </tr>
       <tr>
         <td>dL/d(force)</td>
         <td style="padding:0 10px">${anaGradForce.toFixed(4)}</td>
         <td style="padding:0 10px">${numGrad.numGradForce.toFixed(4)}</td>
-        <td style="padding:0 10px; color:${errForce < 0.05 ? '#4caf50' : '#ff9800'}">${(errForce * 100).toFixed(2)}%</td>
+        <td style="padding:0 10px; color:${errForce < 0.05 ? '#2e7d32' : '#e65100'}">${(errForce * 100).toFixed(2)}%</td>
       </tr>
     </table>
   `;
 
   verifyStatus.textContent = match ? 'Verified!' : 'See details';
-  verifyStatus.style.color = match ? '#4caf50' : '#ff9800';
+  verifyStatus.style.color = match ? '#2e7d32' : '#e65100';
 }
 
 function stopAutoGD() {
@@ -1330,7 +1330,7 @@ function autoGDStep() {
   });
 }
 
-function showMessage(text, color = '#fff') {
+function showMessage(text, color = '#222') {
   messageEl.textContent = text;
   messageEl.style.color = color;
   messageEl.style.opacity = 1;
