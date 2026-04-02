@@ -131,7 +131,7 @@ h1 {
   margin-right: 2px;
 }
 .hud-param-val {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #333;
   min-width: 50px;
@@ -439,7 +439,7 @@ a:hover { color: #555; }
       <div class="hud-param">
         <span class="hud-param-label">&theta;</span>
         <button class="hud-pm" id="angle-down">&minus;</button>
-        <span class="hud-param-val" id="angle-display">0.0&deg;</span>
+        <span class="hud-param-val" id="angle-display">0.0°</span>
         <button class="hud-pm" id="angle-up">+</button>
         <span class="hud-grad-hint" id="grad-angle-val"></span>
       </div>
@@ -577,25 +577,24 @@ const messageEl = document.getElementById('message');
 const startScreen = document.getElementById('start-screen');
 
 // +/- button step sizes
-const ANGLE_STEP = 1; // degrees
-const FORCE_STEP = 0.5;
+const ANGLE_STEP = 0.1; // degrees
+const FORCE_STEP = 0.1;
 
 function updateDisplays() {
   const a = parseFloat(angleInput.value) || 0;
   const f = parseFloat(forceInput.value) || 1;
-  angleDisplay.textContent = a.toFixed(1) + '\u00B0';
-  forceDisplay.textContent = f.toFixed(1);
+  angleDisplay.textContent = a.toFixed(2) + '\u00B0';
+  forceDisplay.textContent = f.toFixed(2);
 }
 
 function adjustAngle(delta) {
   angleInput.value = (((parseFloat(angleInput.value) || 0) + delta) % 360 + 360) % 360;
-  angleInput.value = parseFloat(angleInput.value).toFixed(1);
   updateDisplays();
 }
 
 function adjustForce(delta) {
   const f = Math.max(0.5, Math.min(MAX_POWER, (parseFloat(forceInput.value) || 1) + delta));
-  forceInput.value = f.toFixed(1);
+  forceInput.value = f;
   updateDisplays();
 }
 
@@ -1499,8 +1498,7 @@ function applyGradient() {
   const newForce = clampForce(lastResult.force - lr * lastResult.grad_force);
 
   angleInput.value = ((newAngle % 360) + 360) % 360;
-  angleInput.value = parseFloat(angleInput.value).toFixed(1);
-  forceInput.value = newForce.toFixed(1);
+  forceInput.value = newForce;
   updateDisplays();
   drawContourPlot();
 }
@@ -1520,8 +1518,7 @@ function applyGradientWithLineSearch() {
   const newForce = clampForce(lastResult.force - alpha * lastResult.grad_force);
 
   angleInput.value = ((newAngle % 360) + 360) % 360;
-  angleInput.value = parseFloat(angleInput.value).toFixed(1);
-  forceInput.value = newForce.toFixed(1);
+  forceInput.value = newForce;
   updateDisplays();
 }
 
@@ -1897,8 +1894,8 @@ function contourSetFromEvent(e) {
   const my = (e.clientY - rect.top) * sy;
   const angle = ((contourToAngle(mx) % 360) + 360) % 360;
   const force = Math.max(FORCE_MIN, Math.min(MAX_POWER, contourToForce(my)));
-  angleInput.value = angle.toFixed(1);
-  forceInput.value = force.toFixed(1);
+  angleInput.value = angle;
+  forceInput.value = force;
   updateDisplays();
   drawContourPlot();
 }
