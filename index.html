@@ -463,7 +463,7 @@ a:hover { color: #555; }
   <div id="help-overlay" style="display:none;">
     <div id="help-content">
       <h2>Backprop Golf</h2>
-      <p>Learn <strong>gradient descent</strong> by playing mini golf. Adjust angle and force, then shoot. <strong>Backpropagation</strong> computes how the loss (squared distance to hole) changes with your parameters. Use the gradient to improve your shot.</p>
+      <p>Learn <strong>gradient descent</strong> by playing mini golf. Adjust angle and force, then shoot. <strong>Backpropagation</strong> asks: if the final miss had been a bit smaller, what tiny changes earlier in the trajectory would have caused that? It works backward from the end, computing the gradient of the loss with respect to your parameters. Use the gradient to improve your shot.</p>
 
       <h3>How to play</h3>
       <ol>
@@ -533,10 +533,10 @@ a:hover { color: #555; }
   <h1>Backprop Golf</h1>
   <p class="subtitle">Learn Backpropagation Through Mini Golf</p>
   <p class="desc">
-    Choose an angle and force to hit the ball. The ball bounces around following physics.
-    After each shot, <strong>backpropagation</strong> computes the gradient of the loss
-    (distance&sup2; to hole) with respect to your parameters.
-    Use the gradient to make small adjustments &mdash; this is <strong>gradient descent</strong>!
+    Choose an angle and force to hit the ball.
+    After each shot, <strong>backpropagation</strong> asks: if the final miss had been a bit smaller, what tiny changes to the initial shot would have caused that?
+    It works backward through the trajectory to compute the gradient.
+    Use it to make small adjustments &mdash; this is <strong>gradient descent</strong>!
   </p>
   <button onclick="startGame()">Play</button>
 </div>
