@@ -4,6 +4,6 @@
 
 - [ ] **Undo/redo and shot replay** — Add the ability to replay previous shots. Implement undo and redo so the user can step back through their iteration history, see the trajectory for any previous shot, and restore earlier angle/force values. The iteration history list (already showing `#1: angle=... force=... loss=...`) is the natural place to integrate this — clicking an entry could restore that shot's parameters and trajectory, effectively acting as undo. Entries after the selected one become the redo stack.
 
-- [ ] **Fully keyboard-friendly controls** — All actions should be accessible via keyboard shortcuts (e.g., shoot, apply gradient, auto GD, reset, next hole, fullscreen). Add visible keybinding hints on buttons. Tab order should be logical.
+- [ ] **Shift/Ctrl + arrow keys for coarse adjustment** — Holding shift (or ctrl) while pressing arrow keys should apply a larger step size (e.g., 1° or 5° for angle, 1.0 for force) for faster manual exploration.
 
-- [ ] **Help option** — Add a help overlay or panel explaining the controls, the concept of backpropagation/gradient descent in this context, and what the displayed values mean (loss, gradients, learning rate).
+- [ ] **Sqrt loss display** — Consider showing sqrt(loss) (distance in pixels) instead of squared distance for the loss curve and contour plot, to keep units intuitive.
