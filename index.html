@@ -81,7 +81,7 @@ canvas {
 }
 .control-group input[type="number"]:focus {
   outline: none;
-  border-color: #0181eb;
+  border-color: #888;
 }
 .unit {
   font-size: 0.85em;
@@ -116,37 +116,37 @@ button:disabled:hover {
   border-color: #ccc;
 }
 #shoot-btn {
-  background: #0181eb;
+  background: #555;
   color: #f8f8f8;
-  border-color: #0181eb;
+  border-color: #555;
   padding: 8px 24px;
   font-size: 1em;
 }
 #shoot-btn:hover {
-  background: #006acc;
-  border-color: #006acc;
+  background: #444;
+  border-color: #444;
 }
 #apply-btn {
   background: #f8f8f8;
   color: #333;
 }
 #next-btn {
-  background: #0181eb;
+  background: #555;
   color: #f8f8f8;
-  border-color: #0181eb;
+  border-color: #555;
   display: none;
 }
 #next-btn:hover {
-  background: #006acc;
+  background: #444;
 }
 #auto-btn {
   background: #f8f8f8;
   color: #333;
 }
 #auto-btn.running {
-  background: #888;
+  background: #777;
   color: #fff;
-  border-color: #888;
+  border-color: #777;
   animation: pulse 1s infinite;
 }
 @keyframes pulse {
@@ -185,7 +185,7 @@ button:disabled:hover {
   color: #666;
 }
 .info-pill span {
-  color: #0181eb;
+  color: #333;
 }
 #results-panel {
   background: #f8f8f8;
@@ -215,10 +215,10 @@ button:disabled:hover {
   font-size: 0.95em;
   font-weight: 600;
 }
-.result-value.loss { color: #c62828; }
-.result-value.dist { color: #e65100; }
-.result-value.grad { color: #0181eb; }
-.result-value.good { color: #2e7d32; }
+.result-value.loss { color: #996060; }
+.result-value.dist { color: #887050; }
+.result-value.grad { color: #506888; }
+.result-value.good { color: #607860; }
 #verify-panel {
   display: none;
   font-size: 0.8em;
@@ -244,7 +244,7 @@ button:disabled:hover {
   padding: 8px 12px;
 }
 #history div { padding: 1px 0; }
-#history .latest { color: #0181eb; font-weight: 600; }
+#history .latest { color: #333; font-weight: 600; }
 #message {
   position: fixed;
   top: 50%;
@@ -288,22 +288,23 @@ button:disabled:hover {
   margin-bottom: 30px;
 }
 #start-screen button {
-  background: #0181eb;
+  background: #555;
   color: #f8f8f8;
-  border-color: #0181eb;
+  border-color: #555;
   font-size: 1.2em;
   padding: 12px 50px;
   border-radius: 4px;
 }
 #start-screen button:hover {
-  background: #006acc;
+  background: #444;
 }
 a {
-  color: #0181eb;
+  color: inherit;
+  text-decoration: underline;
   transition: color 0.3s;
 }
 a:hover {
-  color: #006acc;
+  color: #555;
 }
 @media (max-width: 600px) {
   body { padding: 8px; }
@@ -859,7 +860,7 @@ function drawCourse(courseIdx) {
     ctx.moveTo(course.hole.x, course.hole.y - 40);
     ctx.lineTo(course.hole.x + 16, course.hole.y - 33);
     ctx.lineTo(course.hole.x, course.hole.y - 26);
-    ctx.fillStyle = '#0181eb';
+    ctx.fillStyle = '#996060';
     ctx.fill();
   }
 }
@@ -929,7 +930,7 @@ function drawTrajectory(positions, maxIdx) {
   for (let i = 1; i < n; i++) {
     ctx.lineTo(positions[i].x, positions[i].y);
   }
-  ctx.strokeStyle = 'rgba(1,129,235,0.45)';
+  ctx.strokeStyle = 'rgba(80,80,80,0.45)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -937,7 +938,7 @@ function drawTrajectory(positions, maxIdx) {
   for (let i = 0; i < n; i += 10) {
     ctx.beginPath();
     ctx.arc(positions[i].x, positions[i].y, 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(1,129,235,0.55)';
+    ctx.fillStyle = 'rgba(80,80,80,0.55)';
     ctx.fill();
   }
 }
@@ -950,7 +951,7 @@ function drawTrajectoryWithAlpha(positions, alpha) {
   for (let i = 1; i < positions.length; i++) {
     ctx.lineTo(positions[i].x, positions[i].y);
   }
-  ctx.strokeStyle = '#0181eb';
+  ctx.strokeStyle = '#777';
   ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.globalAlpha = 1;
@@ -990,7 +991,7 @@ function drawLossPlot() {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = '#0181eb';
+  ctx.strokeStyle = '#666';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
@@ -1000,7 +1001,7 @@ function drawLossPlot() {
     const y = plotY + plotH - (allLosses[i] / maxLoss) * plotH;
     ctx.beginPath();
     ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#0181eb';
+    ctx.fillStyle = '#666';
     ctx.fill();
   }
 
@@ -1232,8 +1233,8 @@ function showResults(angleDeg, force, bpResult, simResult) {
     holeComplete = true;
     nextBtn.style.display = 'inline-block';
     nextBtn.disabled = currentCourse >= courses.length - 1;
-    spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#0181eb', 40);
-    showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#0181eb');
+    spawnParticles(courses[currentCourse].hole.x, courses[currentCourse].hole.y, '#8a9e8a', 40);
+    showMessage(iteration === 1 ? 'First try!' : `In ${iteration} iterations!`, '#555');
   } else {
     lossVal.textContent = bpResult.loss.toFixed(1);
     lossVal.className = 'result-value loss';
@@ -1361,7 +1362,7 @@ function verifyGradient() {
 
   verifyPanel.style.display = 'block';
   verifyPanel.innerHTML = `
-    <div style="margin-bottom:4px; color:${match ? '#2e7d32' : '#e65100'}; font-weight:bold">
+    <div style="margin-bottom:4px; color:${match ? '#607860' : '#887050'}; font-weight:bold">
       ${match ? 'Gradients match!' : 'Gradients differ (expected near collision boundaries)'}
     </div>
     <table style="font-size:12px; color:#aaa;">
@@ -1370,19 +1371,19 @@ function verifyGradient() {
         <td>dL/d(angle)</td>
         <td style="padding:0 10px">${anaGradAngle.toFixed(4)}</td>
         <td style="padding:0 10px">${numGrad.numGradAngle.toFixed(4)}</td>
-        <td style="padding:0 10px; color:${errAngle < 0.05 ? '#2e7d32' : '#e65100'}">${(errAngle * 100).toFixed(2)}%</td>
+        <td style="padding:0 10px; color:${errAngle < 0.05 ? '#607860' : '#887050'}">${(errAngle * 100).toFixed(2)}%</td>
       </tr>
       <tr>
         <td>dL/d(force)</td>
         <td style="padding:0 10px">${anaGradForce.toFixed(4)}</td>
         <td style="padding:0 10px">${numGrad.numGradForce.toFixed(4)}</td>
-        <td style="padding:0 10px; color:${errForce < 0.05 ? '#2e7d32' : '#e65100'}">${(errForce * 100).toFixed(2)}%</td>
+        <td style="padding:0 10px; color:${errForce < 0.05 ? '#607860' : '#887050'}">${(errForce * 100).toFixed(2)}%</td>
       </tr>
     </table>
   `;
 
   verifyStatus.textContent = match ? 'Verified!' : 'See details';
-  verifyStatus.style.color = match ? '#2e7d32' : '#e65100';
+  verifyStatus.style.color = match ? '#607860' : '#887050';
 }
 
 function stopAutoGD() {
@@ -1431,12 +1432,12 @@ function autoGDStep() {
       (prevAutoLoss - loss) / prevAutoLoss : 0;
 
     if (gradNormSq < 1e-8) {
-      showMessage('Converged (gradient ~ 0)', '#2e7d32');
+      showMessage('Converged (gradient ~ 0)', '#555');
       stopAutoGD();
       return;
     }
     if (loss > 0 && relImprovement < 1e-8 && prevAutoLoss < Infinity) {
-      showMessage('Converged (no progress)', '#e65100');
+      showMessage('Converged (no progress)', '#555');
       stopAutoGD();
       return;
     }
