@@ -7,6 +7,8 @@
 
 - [ ] **Shift/Ctrl + arrow keys for coarse adjustment** — Holding shift (or ctrl) while pressing arrow keys should apply a larger step size (e.g., 1° or 5° for angle, 1.0 for force) for faster manual exploration.
 
+- [ ] **Advanced levels with obstacle-based routing** — Design levels where the ball cannot reach the hole in a straight line and must bounce off walls/obstacles. The user needs to reason about reflection angles and use the gradient to find the right bank shot. This highlights how backprop differentiates through the collision physics — a non-obvious capability.
+
 - [ ] **Sqrt loss display** — Consider showing sqrt(loss) (distance in pixels) instead of squared distance for the loss curve and contour plot, to keep units intuitive.
 
 ## Done
