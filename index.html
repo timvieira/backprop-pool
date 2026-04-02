@@ -346,6 +346,7 @@ a:hover { color: #555; }
       <div><span class="hud-label">dist</span> <span class="hud-val hud-dist" id="dist-val">--</span></div>
       <div><span class="hud-label">dL/d&theta;</span> <span class="hud-val hud-grad" id="grad-angle-val">--</span></div>
       <div><span class="hud-label">dL/dF</span> <span class="hud-val hud-grad" id="grad-force-val">--</span></div>
+      <canvas id="loss-plot" width="130" height="50" style="display:none; margin-top:4px;"></canvas>
     </div>
 
     <!-- HUD: bottom controls -->
@@ -974,57 +975,50 @@ function drawTrajectoryWithAlpha(positions, alpha) {
 }
 
 function drawLossPlot() {
-  const pw = 140, ph = 70;
-  const px = W - pw - 12, py = H - ph - 12;
-  const pad = 4;
+  const plotCanvas = document.getElementById('loss-plot');
+  const pc = plotCanvas.getContext('2d');
+  const pw = plotCanvas.width, ph = plotCanvas.height;
+  const pad = 2;
 
-  // Background
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillRect(px, py, pw, ph);
-  ctx.strokeStyle = '#ccc';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(px, py, pw, ph);
+  plotCanvas.style.display = 'block';
+  pc.clearRect(0, 0, pw, ph);
 
-  // Label
-  ctx.fillStyle = '#888';
-  ctx.font = '9px Menlo, Monaco, monospace';
-  ctx.fillText('loss', px + 4, py + 11);
-
-  // Plot area
-  const plotX = px + pad;
-  const plotY = py + 16;
-  const plotW = pw - pad * 2;
-  const plotH = ph - 20;
+  // Axes
+  pc.strokeStyle = '#ccc';
+  pc.lineWidth = 0.5;
+  pc.beginPath();
+  pc.moveTo(pad, pad);
+  pc.lineTo(pad, ph - pad);
+  pc.lineTo(pw - pad, ph - pad);
+  pc.stroke();
 
   const maxLoss = Math.max(...allLosses);
   if (maxLoss <= 0) return;
 
+  const plotX = pad + 1;
+  const plotY = pad;
+  const plotW = pw - pad * 2 - 1;
+  const plotH = ph - pad * 2;
+
   const n = allLosses.length;
-  ctx.beginPath();
+  pc.beginPath();
   for (let i = 0; i < n; i++) {
     const x = plotX + (i / Math.max(1, n - 1)) * plotW;
     const y = plotY + plotH - (allLosses[i] / maxLoss) * plotH;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (i === 0) pc.moveTo(x, y);
+    else pc.lineTo(x, y);
   }
-  ctx.strokeStyle = '#666';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  pc.strokeStyle = '#666';
+  pc.lineWidth = 1.5;
+  pc.stroke();
 
-  // Dots on first and last
-  for (const i of [0, n - 1]) {
-    const x = plotX + (i / Math.max(1, n - 1)) * plotW;
-    const y = plotY + plotH - (allLosses[i] / maxLoss) * plotH;
-    ctx.beginPath();
-    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#666';
-    ctx.fill();
-  }
-
-  // Iteration axis label
-  ctx.fillStyle = '#aaa';
-  ctx.fillText('1', plotX, py + ph - 2);
-  ctx.fillText(String(n), plotX + plotW - ctx.measureText(String(n)).width, py + ph - 2);
+  // Dot on latest point
+  const lastX = plotX + ((n - 1) / Math.max(1, n - 1)) * plotW;
+  const lastY = plotY + plotH - (allLosses[n - 1] / maxLoss) * plotH;
+  pc.beginPath();
+  pc.arc(lastX, lastY, 2, 0, Math.PI * 2);
+  pc.fillStyle = '#666';
+  pc.fill();
 }
 
 function drawLossLine(fx, fy, hx, hy) {
@@ -1119,11 +1113,6 @@ function render() {
     }
   }
 
-  // Draw loss plot (bottom-right corner)
-  if (allLosses.length > 1) {
-    drawLossPlot();
-  }
-
   drawParticles();
   requestAnimationFrame(render);
 }
@@ -1161,6 +1150,7 @@ function loadHole(idx) {
 
   resultsPanel.style.display = 'none';
   hudResults.style.display = 'none';
+  document.getElementById('loss-plot').style.display = 'none';
   historyEl.style.display = 'none';
   nextBtn.style.display = 'none';
   verifyPanel.style.display = 'none';
@@ -1274,6 +1264,9 @@ function showResults(angleDeg, force, bpResult, simResult) {
   entry.classList.add('latest');
   historyEl.appendChild(entry);
   historyEl.scrollTop = historyEl.scrollHeight;
+
+  // Update loss plot
+  if (allLosses.length > 1) drawLossPlot();
 
   // Clear verify panel on new shot
   verifyPanel.style.display = 'none';
