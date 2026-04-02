@@ -780,42 +780,45 @@ function simulate(angleDeg, force, courseIdx) {
       }
     }
 
-    // Position update
-    x += vx;
-    y += vy;
+    // Substep position update + collision (prevent tunneling)
+    const spd = Math.sqrt(vx * vx + vy * vy);
+    const nSub = Math.max(1, Math.ceil(spd / BALL_R));
+    const svx = vx / nSub, svy = vy / nSub;
+    // Record one pos tape entry for the full step (for backprop)
     tape.push({ type: 'pos' });
 
-    // Wall + obstacle collisions
     const allWalls = [...(course.walls || []), ...(course.obstacles || [])];
     let hadCollision = false;
-    for (const w of allWalls) {
-      if (circleRect(x, y, BALL_R, w.x, w.y, w.w, w.h)) {
-        const cx = Math.max(w.x, Math.min(x, w.x + w.w));
-        const cy = Math.max(w.y, Math.min(y, w.y + w.h));
-        const cdx = x - cx;
-        const cdy = y - cy;
-        const dist = Math.sqrt(cdx * cdx + cdy * cdy);
-        if (dist === 0) continue;
-        const nx = cdx / dist;
-        const ny = cdy / dist;
+    for (let sub = 0; sub < nSub; sub++) {
+      x += svx;
+      y += svy;
 
-        // Record contact point before push-out (for clean trajectory)
-        if (!hadCollision) {
-          positions.push({ x: cx + nx * BALL_R, y: cy + ny * BALL_R });
-          hadCollision = true;
+      for (const w of allWalls) {
+        if (circleRect(x, y, BALL_R, w.x, w.y, w.w, w.h)) {
+          const cx = Math.max(w.x, Math.min(x, w.x + w.w));
+          const cy = Math.max(w.y, Math.min(y, w.y + w.h));
+          const cdx = x - cx;
+          const cdy = y - cy;
+          const dist = Math.sqrt(cdx * cdx + cdy * cdy);
+          if (dist === 0) continue;
+          const nx = cdx / dist;
+          const ny = cdy / dist;
+
+          if (!hadCollision) {
+            positions.push({ x: cx + nx * BALL_R, y: cy + ny * BALL_R });
+            hadCollision = true;
+          }
+
+          const overlap = BALL_R - dist;
+          x += nx * overlap;
+          y += ny * overlap;
+
+          const dot = vx * nx + vy * ny;
+          vx = (vx - 2 * dot * nx) * 0.8;
+          vy = (vy - 2 * dot * ny) * 0.8;
+
+          tape.push({ type: 'collision', nx, ny });
         }
-
-        // Push ball out
-        const overlap = BALL_R - dist;
-        x += nx * overlap;
-        y += ny * overlap;
-
-        // Reflect velocity
-        const dot = vx * nx + vy * ny;
-        vx = (vx - 2 * dot * nx) * 0.8;
-        vy = (vy - 2 * dot * ny) * 0.8;
-
-        tape.push({ type: 'collision', nx, ny });
       }
     }
 
