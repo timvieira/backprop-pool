@@ -7,7 +7,11 @@
 
 - [ ] **Shift/Ctrl + arrow keys for coarse adjustment** — Holding shift (or ctrl) while pressing arrow keys should apply a larger step size (e.g., 1° or 5° for angle, 1.0 for force) for faster manual exploration.
 
-- [ ] **Advanced levels with obstacle-based routing** — Design levels where the ball cannot reach the hole in a straight line and must bounce off walls/obstacles. The user needs to reason about reflection angles and use the gradient to find the right bank shot. This highlights how backprop differentiates through the collision physics — a non-obvious capability. Advanced levels could introduce new physics elements: ramps, quarter pipes, ice (low friction), sand (high friction), other balls (momentum transfer), rubber walls (high restitution), etc. Each adds a new differentiable operation to the tape.
+- [ ] **Advanced levels with obstacle-based routing** — Design levels where the ball cannot reach the hole in a straight line and must bounce off walls/obstacles. The user needs to reason about reflection angles and use the gradient to find the right bank shot. This highlights how backprop differentiates through the collision physics — a non-obvious capability. Advanced levels could introduce new physics elements: ramps, quarter pipes, ice (low friction), sand (high friction), other balls (momentum transfer), rubber walls (high restitution), slanted floors (gravity bias), etc. Each adds a new differentiable operation to the tape. Ramps in particular can teach the value of global vs local thinking in optimization.
+
+- [ ] **Nonsmoothness explanation** — Add explanation of piecewise differentiability: collisions are discrete events, so the loss landscape is nonsmooth. Backprop differentiates through the branch actually taken (just like ReLU). This is a reality of real systems, not a limitation. Worth explaining in the help panel.
+
+- [ ] **3D extensions** — Consider extending the game to 3D (e.g., ramps, elevation changes, 3D ball physics) for a richer teaching environment.
 
 - [ ] **Sqrt loss display** — Consider showing sqrt(loss) (distance in pixels) instead of squared distance for the loss curve and contour plot, to keep units intuitive.
 

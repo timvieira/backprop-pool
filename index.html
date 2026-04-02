@@ -453,6 +453,7 @@ a:hover { color: #555; }
       <button class="hud-btn" id="auto-btn" title="o">Optimize</button>
       <button class="hud-btn" id="reset-btn" title="r">Reset</button>
       <button class="hud-btn" id="next-btn" style="display:none" title="n">Next</button>
+      <button class="hud-btn" id="adj-btn" title="a — Toggle adjoints">Adj</button>
       <button class="hud-btn" id="fs-btn" title="f — Fullscreen">&#x26F6;</button>
       <button class="hud-btn" id="help-btn" title="?">?</button>
     </div>
@@ -488,6 +489,7 @@ a:hover { color: #555; }
         <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>Adjust force</td></tr>
         <tr><td><kbd>g</kbd></td><td>Apply gradient step</td></tr>
         <tr><td><kbd>o</kbd></td><td>Optimize (auto gradient descent with line search)</td></tr>
+        <tr><td><kbd>a</kbd></td><td>Toggle adjoints (off &rarr; position &rarr; velocity)</td></tr>
         <tr><td><kbd>r</kbd></td><td>Reset hole</td></tr>
         <tr><td><kbd>n</kbd></td><td>Next hole</td></tr>
         <tr><td><kbd>f</kbd></td><td>Fullscreen</td></tr>
@@ -738,6 +740,9 @@ let autoGDRunning = false;
 let autoGDTimer = null;
 let prevAutoLoss = Infinity;
 let paramHistory = []; // {angle, force} for each shot
+let lastBpResult = null;
+let showAdjoints = false; // off, 'position', 'velocity'
+let adjointMode = 'position';
 let lossGrid = null;   // Float64Array for contour plot
 let animFrame = 0;
 let animPositions = [];
@@ -805,7 +810,7 @@ function simulate(angleDeg, force, courseIdx) {
           const ny = cdy / dist;
 
           if (!hadCollision) {
-            positions.push({ x: cx + nx * BALL_R, y: cy + ny * BALL_R });
+            positions.push({ x: cx + nx * BALL_R, y: cy + ny * BALL_R, collision: true });
             hadCollision = true;
           }
 
@@ -866,6 +871,9 @@ function backprop(tape, finalX, finalY, holeX, holeY, angleDeg, force) {
   let gvx = 0;
   let gvy = 0;
 
+  // Record adjoint state at each timestep (collected in reverse, reversed at end)
+  const adjoints = [];
+
   // Backprop through tape in reverse
   for (let i = tape.length - 1; i >= 0; i--) {
     const op = tape[i];
@@ -875,6 +883,8 @@ function backprop(tape, finalX, finalY, holeX, holeY, angleDeg, force) {
         // Backward: gvx += gx, gvy += gy (position gradients flow to velocity)
         gvx += gx;
         gvy += gy;
+        // Snapshot adjoint state at this timestep
+        adjoints.push({ gx, gy, gvx, gvy });
         break;
 
       case 'friction':
@@ -924,7 +934,9 @@ function backprop(tape, finalX, finalY, holeX, holeY, angleDeg, force) {
   // d(vy0)/d(force) = sin(angleRad)
   const grad_force = gvx * cosA + gvy * sinA;
 
-  return { loss, grad_angle, grad_force };
+  adjoints.reverse(); // now chronological: adjoints[k] = timestep k
+
+  return { loss, grad_angle, grad_force, adjoints };
 }
 
 // ========== NUMERICAL GRADIENT (for verification) ==========
@@ -1180,6 +1192,61 @@ function drawLossPlot() {
   pc.fill();
 }
 
+function drawAdjoints(positions, adjoints, mode) {
+  if (!adjoints || adjoints.length === 0) return;
+
+  // Main positions only (skip collision contact points); index 0 is initial position
+  const mainPos = positions.filter(p => !p.collision);
+  const spacing = Math.max(1, Math.floor(adjoints.length / 40)); // ~40 arrows max
+  const maxLen = 25;
+
+  const color = mode === 'velocity' ? 'rgba(135,100,70,0.55)' : 'rgba(80,105,135,0.55)';
+
+  for (let k = 0; k < adjoints.length; k += spacing) {
+    const posIdx = k + 1; // adjoints[0] aligns with mainPos[1]
+    if (posIdx >= mainPos.length) continue;
+
+    const px = mainPos[posIdx].x;
+    const py = mainPos[posIdx].y;
+    const adj = adjoints[k];
+
+    // Negative gradient = direction of decrease
+    let dx, dy;
+    if (mode === 'velocity') {
+      dx = -adj.gvx;
+      dy = -adj.gvy;
+    } else {
+      dx = -adj.gx;
+      dy = -adj.gy;
+    }
+
+    const mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag < 0.001) continue;
+
+    const len = Math.min(maxLen, mag * 0.15);
+    const ax = (dx / mag) * len;
+    const ay = (dy / mag) * len;
+
+    // Arrow shaft
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px + ax, py + ay);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Arrowhead
+    const angle = Math.atan2(ay, ax);
+    const hl = 4;
+    ctx.beginPath();
+    ctx.moveTo(px + ax, py + ay);
+    ctx.lineTo(px + ax - hl * Math.cos(angle - 0.45), py + ay - hl * Math.sin(angle - 0.45));
+    ctx.moveTo(px + ax, py + ay);
+    ctx.lineTo(px + ax - hl * Math.cos(angle + 0.45), py + ay - hl * Math.sin(angle + 0.45));
+    ctx.stroke();
+  }
+}
+
 function drawLossLine(fx, fy, hx, hy) {
   ctx.beginPath();
   ctx.setLineDash([4, 4]);
@@ -1260,6 +1327,11 @@ function render() {
     }
   }
 
+  // Draw adjoints (only after animation completes)
+  if (showAdjoints && !animating && lastBpResult && lastBpResult.adjoints && trajectory.length > 0) {
+    drawAdjoints(trajectory, lastBpResult.adjoints, adjointMode);
+  }
+
   // Draw ball at start position (if not animating or before first shot)
   if (!animating) {
     if (!holeComplete) {
@@ -1289,6 +1361,7 @@ function loadHole(idx) {
   allLosses = [];
   paramHistory = [];
   lastResult = null;
+  lastBpResult = null;
   particles = [];
   history = [];
   animating = false;
@@ -1352,6 +1425,7 @@ function shoot(onComplete) {
   iterNumEl.textContent = iteration;
 
   lastResult = simResult;
+  lastBpResult = bpResult;
   // Save previous trajectory before overwriting
   if (trajectory.length > 0) {
     allTrajectories.push(trajectory);
@@ -1655,6 +1729,22 @@ document.getElementById('fs-btn').addEventListener('click', () => {
   }
 });
 
+const adjBtn = document.getElementById('adj-btn');
+function toggleAdjoints() {
+  if (!showAdjoints) {
+    showAdjoints = true;
+    adjointMode = 'position';
+    adjBtn.textContent = 'Adj:pos';
+  } else if (adjointMode === 'position') {
+    adjointMode = 'velocity';
+    adjBtn.textContent = 'Adj:vel';
+  } else {
+    showAdjoints = false;
+    adjBtn.textContent = 'Adj';
+  }
+}
+adjBtn.addEventListener('click', toggleAdjoints);
+
 const helpOverlay = document.getElementById('help-overlay');
 function toggleHelp() {
   helpOverlay.style.display = helpOverlay.style.display === 'none' ? 'flex' : 'none';
@@ -1703,6 +1793,9 @@ document.addEventListener('keydown', (e) => {
       break;
     case 'o':
       toggleAutoGD();
+      break;
+    case 'a':
+      toggleAdjoints();
       break;
     case 'g':
       applyGradient();
