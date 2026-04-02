@@ -504,7 +504,7 @@ a:hover { color: #555; }
 
   <!-- Contour plot of loss landscape -->
   <div id="contour-wrap">
-    <canvas id="contour" width="400" height="200"></canvas>
+    <canvas id="contour" width="500" height="250"></canvas>
     <div id="contour-labels">
       <span class="contour-ylabel">Force</span>
       <span class="contour-xlabel">&theta; (degrees)</span>
@@ -1738,7 +1738,7 @@ document.addEventListener('keydown', (e) => {
 const contourCanvas = document.getElementById('contour');
 const cctx = contourCanvas.getContext('2d');
 const CW = contourCanvas.width, CH = contourCanvas.height;
-const GRID_W = 60, GRID_H = 40;
+const GRID_W = 120, GRID_H = 60;
 const ANGLE_MIN = 0, ANGLE_MAX = 360;
 const FORCE_MIN = 0.5;
 // FORCE_MAX = MAX_POWER (already defined)
@@ -1807,6 +1807,52 @@ function drawContourPlot() {
     }
   }
   cctx.putImageData(imgData, 0, 0);
+
+  // Draw iso-contour lines (marching squares with linear interpolation)
+  const cellW = CW / (GRID_W - 1);
+  const cellH = CH / (GRID_H - 1);
+  const nLevels = 10;
+  cctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  cctx.lineWidth = 0.8;
+  for (let l = 1; l <= nLevels; l++) {
+    const threshold = (l / (nLevels + 1)) * maxLog;
+    cctx.beginPath();
+    for (let j = 0; j < GRID_H - 1; j++) {
+      for (let i = 0; i < GRID_W - 1; i++) {
+        const i1 = (i + 1) % GRID_W;
+        const v00 = logGrid[j * GRID_W + i];
+        const v10 = logGrid[j * GRID_W + i1];
+        const v01 = logGrid[(j+1) * GRID_W + i];
+        const v11 = logGrid[(j+1) * GRID_W + i1];
+        // Grid corners in pixel coords (y inverted)
+        const x0 = i * cellW, x1 = (i+1) * cellW;
+        const y0 = (GRID_H - 1 - j) * cellH, y1 = (GRID_H - 2 - j) * cellH;
+        // Marching squares case
+        const bits = (v00 >= threshold ? 1 : 0) | (v10 >= threshold ? 2 : 0)
+                   | (v11 >= threshold ? 4 : 0) | (v01 >= threshold ? 8 : 0);
+        if (bits === 0 || bits === 15) continue;
+        // Interpolation helpers
+        const lerp = (a, b, va, vb) => a + (threshold - va) / (vb - va) * (b - a);
+        // Edge midpoints: bottom(0-1), right(1-2), top(2-3), left(3-0)
+        const eb = { x: lerp(x0, x1, v00, v10), y: y0 };
+        const er = { x: x1, y: lerp(y0, y1, v10, v11) };
+        const et = { x: lerp(x0, x1, v01, v11), y: y1 };
+        const el = { x: x0, y: lerp(y0, y1, v00, v01) };
+        const segments = {
+          1:[eb,el], 2:[er,eb], 3:[er,el], 4:[et,er], 5:[eb,er,et,el], 6:[et,eb],
+          7:[et,el], 8:[el,et], 9:[eb,et], 10:[el,eb,er,et], 11:[er,et], 12:[el,er],
+          13:[eb,er], 14:[el,eb]
+        };
+        const seg = segments[bits];
+        if (!seg) continue;
+        for (let s = 0; s < seg.length; s += 2) {
+          cctx.moveTo(seg[s].x, seg[s].y);
+          cctx.lineTo(seg[s+1].x, seg[s+1].y);
+        }
+      }
+    }
+    cctx.stroke();
+  }
 
   // Draw parameter history trajectory
   if (paramHistory.length > 1) {
