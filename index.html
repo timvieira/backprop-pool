@@ -1396,6 +1396,18 @@ verifyBtn.addEventListener('click', verifyGradient);
   });
 });
 
+// Global keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Dismiss start screen
+  if (startScreen.style.display !== 'none') {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      e.preventDefault();
+      startGame();
+    }
+    return;
+  }
+});
+
 // ========== INIT ==========
 
 loadHole(0);
