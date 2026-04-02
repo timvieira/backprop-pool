@@ -522,6 +522,10 @@ a:hover { color: #555; }
       <span class="contour-ylabel">Force</span>
       <span class="contour-xlabel">&theta; (degrees)</span>
     </div>
+    <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">
+      <button id="basins-btn" style="font-size:11px; padding:3px 8px; min-height:auto;">Show basins</button>
+      <span id="basins-status" style="font-size:10px; color:#888; font-family:Menlo,Monaco,monospace;"></span>
+    </div>
   </div>
 
   <div id="controls">
@@ -1453,6 +1457,9 @@ function loadHole(idx) {
   paramHistory = [];
   lastResult = null;
   lastBpResult = null;
+  basinGrid = null;
+  showBasins = false;
+  if (document.getElementById('basins-status')) document.getElementById('basins-status').textContent = '';
   particles = [];
   history = [];
   animating = false;
@@ -1980,15 +1987,38 @@ function drawContourPlot() {
   const imgData = cctx.createImageData(CW, CH);
   const px = imgData.data;
   for (let py = 0; py < CH; py++) {
-    // Map pixel y to grid j (inverted: top = high force)
     const fy = (1 - py / (CH - 1)) * (GRID_H - 1);
+    // Basin grid coordinate (coarser grid)
+    const bj = (1 - py / (CH - 1)) * (BASIN_H - 1);
     for (let pxx = 0; pxx < CW; pxx++) {
       const fx = (pxx / (CW - 1)) * (GRID_W - 1);
       const t = sampleLog(fx, fy) / maxLog;
       const idx = (py * CW + pxx) * 4;
-      px[idx]     = Math.round(200 - t * 120); // r
-      px[idx + 1] = Math.round(210 - t * 110); // g
-      px[idx + 2] = Math.round(195 - t * 115); // b
+
+      // Base heatmap color
+      let r = Math.round(200 - t * 120);
+      let g = Math.round(210 - t * 110);
+      let b = Math.round(195 - t * 115);
+
+      // Blend basin color if enabled
+      if (showBasins && basinGrid && basinColors) {
+        const bi = Math.round((pxx / (CW - 1)) * (BASIN_W - 1));
+        const bjr = Math.round(bj);
+        const ci = Math.min(bi, BASIN_W - 1);
+        const cj = Math.min(bjr, BASIN_H - 1);
+        const cluster = basinGrid[cj * BASIN_W + ci];
+        if (cluster >= 0 && cluster < basinColors.length) {
+          const bc = basinColors[cluster];
+          const a = bc[3] / 255;
+          r = Math.round(r * (1 - a) + bc[0] * a);
+          g = Math.round(g * (1 - a) + bc[1] * a);
+          b = Math.round(b * (1 - a) + bc[2] * a);
+        }
+      }
+
+      px[idx] = r;
+      px[idx + 1] = g;
+      px[idx + 2] = b;
       px[idx + 3] = 255;
     }
   }
@@ -2140,6 +2170,138 @@ contourCanvas.addEventListener('touchmove', (e) => {
   if (contourDragging) contourSetFromEvent(e.touches[0]);
 }, { passive: false });
 contourCanvas.addEventListener('touchend', () => { contourDragging = false; });
+
+// ========== BASIN OF ATTRACTION ==========
+
+let basinGrid = null;  // Int32Array: cluster index per grid cell
+let basinColors = null; // color per cluster
+let showBasins = false;
+const BASIN_W = 60, BASIN_H = 30;
+const BASIN_MAX_ITER = 15;
+
+function computeBasins() {
+  const statusEl = document.getElementById('basins-status');
+  statusEl.textContent = 'computing...';
+
+  // Use setTimeout to let the UI update before heavy computation
+  setTimeout(() => {
+    const course = courses[currentCourse];
+    const hx = course.hole.x, hy = course.hole.y;
+    const finals = []; // {angle, force, loss} for each grid point
+
+    for (let j = 0; j < BASIN_H; j++) {
+      for (let i = 0; i < BASIN_W; i++) {
+        let angle = (i / (BASIN_W - 1)) * 360;
+        let force = FORCE_MIN + (j / (BASIN_H - 1)) * (MAX_POWER - FORCE_MIN);
+
+        // Run GD with line search
+        for (let iter = 0; iter < BASIN_MAX_ITER; iter++) {
+          const sim = simulate(angle, force, currentCourse);
+          if (sim.inHole) { force = force; break; }
+          const bp = backprop(sim.tape, sim.finalX, sim.finalY, hx, hy, angle, force);
+          const gnsq = bp.grad_angle ** 2 + bp.grad_force ** 2;
+          if (gnsq < 1e-8) break;
+
+          // Line search
+          const loss0 = bp.loss;
+          let alpha = 1.0;
+          for (let ls = 0; ls < 15; ls++) {
+            const na = angle - alpha * bp.grad_angle;
+            const nf = clampForce(force - alpha * bp.grad_force);
+            const nl = evalLoss(na, nf);
+            if (nl <= loss0 - 1e-4 * alpha * gnsq) { alpha = alpha; break; }
+            alpha *= 0.5;
+          }
+          angle = ((angle - alpha * bp.grad_angle) % 360 + 360) % 360;
+          force = clampForce(force - alpha * bp.grad_force);
+        }
+
+        // Record where this starting point converged to
+        const finalSim = simulate(angle, force, currentCourse);
+        finals.push({
+          angle, force,
+          fx: finalSim.finalX, fy: finalSim.finalY,
+          inHole: finalSim.inHole,
+        });
+      }
+    }
+
+    // Cluster by final ball position (not parameter space)
+    const clusters = [];
+    const clusterOf = new Int32Array(finals.length);
+    const CLUSTER_DIST = 20; // pixels
+
+    for (let k = 0; k < finals.length; k++) {
+      const f = finals[k];
+      let bestCluster = -1;
+      let bestDist = Infinity;
+      for (let c = 0; c < clusters.length; c++) {
+        const dx = f.fx - clusters[c].fx;
+        const dy = f.fy - clusters[c].fy;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < bestDist) { bestDist = d; bestCluster = c; }
+      }
+      if (bestDist < CLUSTER_DIST && bestCluster >= 0) {
+        clusterOf[k] = bestCluster;
+      } else {
+        clusterOf[k] = clusters.length;
+        clusters.push({ fx: f.fx, fy: f.fy, inHole: f.inHole });
+      }
+    }
+
+    // Assign colors: hole-reaching cluster gets a distinct color
+    // Others get muted distinct hues
+    const nClusters = clusters.length;
+    basinColors = [];
+    const holeCluster = clusters.findIndex(c => c.inHole);
+    for (let c = 0; c < nClusters; c++) {
+      if (c === holeCluster) {
+        basinColors.push([180, 200, 170, 120]); // light sage for success
+      } else {
+        // Spread hues evenly, muted pastels
+        const hue = (c * 137.5) % 360; // golden angle for spread
+        const [r, g, b] = hslToRgb(hue / 360, 0.25, 0.65);
+        basinColors.push([r, g, b, 100]);
+      }
+    }
+
+    basinGrid = clusterOf;
+    showBasins = true;
+    statusEl.textContent = nClusters + ' basins found';
+    drawContourPlot();
+  }, 10);
+}
+
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+document.getElementById('basins-btn').addEventListener('click', () => {
+  if (showBasins) {
+    showBasins = false;
+    basinGrid = null;
+    document.getElementById('basins-status').textContent = '';
+    drawContourPlot();
+  } else {
+    computeBasins();
+  }
+});
 
 // ========== INIT ==========
 
