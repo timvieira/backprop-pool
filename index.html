@@ -366,7 +366,7 @@ a:hover { color: #555; }
       <div class="hud-sep"></div>
       <button class="hud-btn primary" id="shoot-btn">Shoot</button>
       <button class="hud-btn" id="apply-btn">Grad</button>
-      <button class="hud-btn" id="auto-btn">Auto</button>
+      <button class="hud-btn" id="auto-btn">Optimize</button>
       <button class="hud-btn" id="reset-btn">Reset</button>
       <button class="hud-btn" id="next-btn" style="display:none">Next</button>
       <button class="hud-btn" id="fs-btn" title="Fullscreen">&#x26F6;</button>
@@ -1408,7 +1408,7 @@ function verifyGradient() {
 function stopAutoGD() {
   autoGDRunning = false;
   if (autoGDTimer) { clearTimeout(autoGDTimer); autoGDTimer = null; }
-  autoBtn.textContent = 'Auto GD';
+  autoBtn.textContent = 'Optimize';
   autoBtn.classList.remove('running');
 }
 
