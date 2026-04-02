@@ -163,17 +163,6 @@ h1 {
   margin-left: 2px;
   min-width: 30px;
 }
-.hud-lr-input {
-  width: 58px;
-  padding: 2px 4px;
-  border: 1px solid rgba(0,0,0,0.2);
-  border-radius: 3px;
-  background: rgba(255,255,255,0.3);
-  color: #444;
-  font-size: 10px;
-  font-family: Menlo, Monaco, monospace;
-  min-height: auto;
-}
 .hud-sep {
   width: 1px;
   height: 20px;
@@ -454,7 +443,13 @@ a:hover { color: #555; }
       <div class="hud-sep"></div>
       <button class="hud-btn primary" id="shoot-btn" title="Space / Enter">Shoot</button>
       <button class="hud-btn" id="apply-btn" title="g">Grad</button>
-      <input type="number" id="lr-input" step="0.0001" min="0" value="0.001" class="hud-lr-input" title="Learning rate">
+      <div class="hud-param">
+        <span class="hud-param-label">lr</span>
+        <button class="hud-pm" id="lr-down">&minus;</button>
+        <span class="hud-param-val" id="lr-display">0.001</span>
+        <button class="hud-pm" id="lr-up">+</button>
+      </div>
+      <input type="hidden" id="lr-input" value="0.001">
       <button class="hud-btn" id="auto-btn" title="o">Optimize</button>
       <button class="hud-btn" id="reset-btn" title="r">Reset</button>
       <button class="hud-btn" id="next-btn" style="display:none" title="n">Next</button>
@@ -1645,6 +1640,10 @@ document.getElementById('angle-up').addEventListener('click', () => adjustAngle(
 document.getElementById('angle-down').addEventListener('click', () => adjustAngle(-ANGLE_STEP));
 document.getElementById('force-up').addEventListener('click', () => adjustForce(FORCE_STEP));
 document.getElementById('force-down').addEventListener('click', () => adjustForce(-FORCE_STEP));
+const lrDisplay = document.getElementById('lr-display');
+function updateLRDisplay() { lrDisplay.textContent = parseFloat(lrInput.value).toExponential(0); }
+document.getElementById('lr-up').addEventListener('click', () => { lrInput.value = parseFloat(lrInput.value) * 10; updateLRDisplay(); });
+document.getElementById('lr-down').addEventListener('click', () => { lrInput.value = parseFloat(lrInput.value) / 10; updateLRDisplay(); });
 document.getElementById('fs-btn').addEventListener('click', () => {
   if (document.fullscreenElement) {
     document.exitFullscreen();
